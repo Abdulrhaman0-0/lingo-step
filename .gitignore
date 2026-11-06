@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.vscode/
+data/*.db
+data/*.db-*
+models/image/model.tflite
+models/speech/*.tflite
+models/speech/*.h5
+*.log
+.DS_Store

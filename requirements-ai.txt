@@ -1,0 +1,5 @@
+# Raspberry Pi: install a compatible TFLite runtime for your OS/Python architecture.
+# tflite-runtime may have no wheel for some recent Pi OS Python versions.
+# TensorFlow Lite can also be accessed through a compatible TensorFlow installation.
+# Do not blindly pip install full TensorFlow on a Raspberry Pi.
+numpy>=1.26,<3

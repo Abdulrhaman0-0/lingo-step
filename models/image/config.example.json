@@ -1,0 +1,6 @@
+{
+  "labels": ["A", "B", "C", "D", "E"],
+  "input_mean": 127.5,
+  "input_std": 127.5,
+  "channel_order": "RGB"
+}
