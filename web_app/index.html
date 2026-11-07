@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LetterStars | Salma Capstone</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#1e3158;background:#f4f7fe}
+*{box-sizing:border-box}body{margin:0}main{max-width:960px;margin:auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+h1{font-size:clamp(28px,5vw,48px);margin:8px 0}h2{margin:8px 0}
+nav,.actions,.letters{display:flex;flex-wrap:wrap;gap:8px}
+button{cursor:pointer;border:0;border-radius:15px;background:#2563eb;color:white;font-size:19px;font-weight:700;padding:14px 20px;min-height:55px}
+button.secondary{background:#0f766e}button.grey{background:#53647f}
+button:focus-visible{outline:4px solid #f59e0b}
+button:disabled{opacity:.5;cursor:not-allowed}.letters button{width:64px;padding:9px}
+.letters button.selected{background:#f59e0b;color:#13213c}
+.panel{background:white;box-shadow:0 4px 22px #101c3b12;border-radius:20px;padding:20px;margin-top:16px}
+#hero{font-size:clamp(100px,25vw,190px);font-weight:800;text-align:center;color:#2563eb;line-height:1.1}
+#video{width:min(100%,500px);border:4px solid #b0c7f4;border-radius:18px;display:block;margin:12px auto}
+#result{font-size:25px;font-weight:800;min-height:42px;text-align:center;color:#0f766e}
+#status{background:#e0ecff;padding:13px;border-radius:12px;min-height:45px}
+small{color:#52647a}section[hidden]{display:none!important}
+</style></head><body><main>
+<header><h1>⭐ LetterStars</h1><span>Salma STEM Capstone</span></header>
+<nav><button onclick="switchMode('learn')">🔤 Learn</button><button class="secondary" onclick="switchMode('revision')">📷 Revision</button><button class="grey" onclick="switchMode('progress')">⭐ Progress</button></nav>
+<div class="panel"><div id="status" role="status">Loading model...</div></div>
+<section id="learn" class="panel"><h2>Learn to say the letter</h2><div id="hero">A</div><div class="letters" id="letters"></div>
+<div class="actions"><button class="secondary" onclick="speakTarget()">🔊 Listen</button><button id="recordButton" onclick="recordSpeech()">🎤 Say the letter</button></div>
+<p id="speechResult">Speech recognition uses Vosk, not pronunciation-quality grading.</p></section>
+<section id="revision" class="panel" hidden><h2>Listen and show the matching card</h2>
+<div class="actions"><button onclick="newChallenge()">🎲 New letter</button><button class="secondary" onclick="speakTarget()">🔊 Hear letter</button><button class="grey" onclick="startCamera()">📷 Start camera</button><button class="grey" onclick="stopCamera()">■ Stop camera</button></div>
+<video id="video" autoplay muted playsinline></video><div id="result">Show a letter card</div>
+<small>The trained model covers A–Z. Unknown/no-card inputs are not a trained class, so confidence alone cannot reliably detect them.</small></section>
+<section id="progress" class="panel" hidden><h2>Your Stars</h2><p id="progressText"></p><button class="grey" onclick="resetProgress()">Reset progress</button></section>
+<p><small>Offline Vosk inference on Raspberry Pi. The first app load needs internet for TensorFlow.js CDN scripts unless those libraries are hosted locally. No recordings leave the device.</small></p>
+</main>
+<script>
+'use strict';
+const labels='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let target='A', mode='learn', imageModel=null, stream=null, cameraRunning=false, stability=[], lastDecision=0;
+const threshold=0.80, stableFrames=5, video=document.getElementById('video');
+const status=msg=>document.getElementById('status').textContent=msg;
+const result=msg=>document.getElementById('result').textContent=msg;
+const progressKey='letterstars_progress_v1';
+function history(){try{return JSON.parse(localStorage.getItem(progressKey)||'[]')}catch{return []}}
+function save(mode,expected,observed,correct,confidence=null){
+ const records=history();records.push({time:new Date().toISOString(),mode,expected,observed,correct,confidence});
+ localStorage.setItem(progressKey,JSON.stringify(records.slice(-500)));showProgress();
+}
+function showProgress(){
+ const rows=history(), right=rows.filter(x=>x.correct).length;
+ document.getElementById('progressText').textContent=`🌟 ${right} correct of ${rows.length} attempts · ${rows.length-right} to practice again`;
+}
+function resetProgress(){if(confirm('Clear practice history?')){localStorage.removeItem(progressKey);showProgress()}}
+function selectLetter(letter){target=letter;document.getElementById('hero').textContent=target;
+ document.querySelectorAll('.letters button').forEach(b=>b.classList.toggle('selected',b.textContent===letter));stability=[];
+ status('Selected letter '+target);}
+function switchMode(next){
+ stopCamera();mode=next;document.querySelectorAll('section.panel').forEach(s=>s.hidden=s.id!==next);
+ if(next==='progress')showProgress();
+ status(next==='revision'?'Press New letter, listen, then show the card.':'Mode: '+next);
+}
+function speakTarget(){
+ if(!('speechSynthesis' in window)){status('Speech synthesis unavailable');return;}
+ speechSynthesis.cancel();const s=new SpeechSynthesisUtterance('The letter '+target);
+ s.lang='en-US';s.rate=.75;speechSynthesis.speak(s);
+}
+function newChallenge(){target=labels[Math.floor(Math.random()*labels.length)];stability=[];lastDecision=0;result('Listen and show the card');speakTarget();}
+async function loadModel(){
+ try{
+  if(typeof tmImage==='undefined')throw Error('TensorFlow.js or Teachable Machine library failed to load. Check internet.');
+  imageModel=await tmImage.load('/models/image/model.json','/models/image/metadata.json');
+  const modelLabels=imageModel.getClassLabels().map(x=>x.trim().toUpperCase());
+  if(modelLabels.length!==26 || modelLabels.some((x,i)=>x!==labels[i]))throw Error('Image model labels must exactly match A–Z.');
+  status('Camera AI ready — 26 letters loaded. Speech model checked when recording.');
+ }catch(e){status('Image AI unavailable: '+e.message);console.error(e)}
+}
+async function startCamera(){
+ if(cameraRunning)return;if(!imageModel){status('Cannot start: image AI model not loaded');return}
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});
+  video.srcObject=stream;await video.play();cameraRunning=true;stability=[];result('Hold the card steady');
+  requestAnimationFrame(frameLoop);
+ }catch(e){status('Camera error: '+e.message)}
+}
+function stopCamera(){cameraRunning=false;stability=[];if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}video.srcObject=null}
+let lastFrameTime=0;
+async function frameLoop(timestamp){
+ if(!cameraRunning)return;
+ if(timestamp-lastFrameTime<130){requestAnimationFrame(frameLoop);return}lastFrameTime=timestamp;
+ try{
+  const scores=await imageModel.predict(video),winner=scores.reduce((a,b)=>b.probability>a.probability?b:a);
+  const letter=winner.className.trim().toUpperCase();
+  stability.push(winner.probability>=threshold?letter:'?');
+  if(stability.length>stableFrames)stability.shift();
+  if(stability.length===stableFrames && stability.every(x=>x===letter) && letter!=='?' && Date.now()-lastDecision>3000){
+   lastDecision=Date.now();const correct=(letter===target);
+   save('revision',target,letter,correct,winner.probability);
+   result(correct?'🌟 Correct! Great job!':'💪 Try again — camera saw '+letter);
+   status('Camera observed '+letter+' ('+Math.round(winner.probability*100)+'% model score)');
+   stopCamera();return;
+  }
+ }catch(e){stopCamera();status('Model error: '+e.message);return}
+ if(cameraRunning)requestAnimationFrame(frameLoop);
+}
+function resample(input,fromRate,toRate=16000){
+ if(fromRate===toRate)return input;
+ const output=new Float32Array(Math.round(input.length*toRate/fromRate));
+ for(let i=0;i<output.length;i++){const pos=i*fromRate/toRate,base=Math.floor(pos),f=pos-base;
+  output[i]=(input[base]||0)*(1-f)+(input[base+1]??input[base]??0)*f;}
+ return output;
+}
+function wav16(samples){
+ const buf=new ArrayBuffer(44+samples.length*2),v=new DataView(buf);
+ const str=(i,s)=>{for(let j=0;j<s.length;j++)v.setUint8(i+j,s.charCodeAt(j))};
+ str(0,'RIFF');v.setUint32(4,36+samples.length*2,true);str(8,'WAVE');str(12,'fmt ');
+ v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);
+ v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,samples.length*2,true);
+ samples.forEach((x,i)=>{x=Math.max(-1,Math.min(1,x));v.setInt16(44+i*2,x<0?x*32768:x*32767,true)});return new Blob([buf],{type:'audio/wav'});
+}
+async function captureAudio(){
+ const mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false},video:false});
+ let context,source,processor;
+ try{
+  context=new AudioContext();source=context.createMediaStreamSource(mic);processor=context.createScriptProcessor(4096,1,1);
+  const chunks=[];processor.onaudioprocess=e=>chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  source.connect(processor);processor.connect(context.destination);
+  await new Promise(resolve=>setTimeout(resolve,1900));
+  const length=chunks.reduce((n,x)=>n+x.length,0),joined=new Float32Array(length);let offset=0;
+  chunks.forEach(x=>{joined.set(x,offset);offset+=x.length});
+  return wav16(resample(joined,context.sampleRate));
+ }finally{
+  if(processor)processor.disconnect();if(source)source.disconnect();
+  if(context)await context.close();mic.getTracks().forEach(t=>t.stop());
+ }
+}
+async function recordSpeech(){
+ const b=document.getElementById('recordButton');b.disabled=true;const spokenTarget=target;
+ try{
+  status('Speak the name of letter '+spokenTarget+' now...');const wav=await captureAudio();
+  status('Vosk is recognizing the recording...');
+  const response=await fetch('/api/speech',{method:'POST',headers:{'Content-Type':'audio/wav'},body:wav});
+  const data=await response.json();if(!response.ok)throw Error(data.error||'Speech error');
+  const text=data.transcript||'(nothing recognized)',right=data.letter===spokenTarget;
+  if(data.letter){save('learn',spokenTarget,data.letter,right);
+    document.getElementById('speechResult').textContent=right?'🌟 Correct letter name!':'💪 Try again. Heard: '+text;
+  }else document.getElementById('speechResult').textContent='Not recognized, please try again.';
+  status('Vosk transcript: '+text+' · Letter-name recognition only (not pronunciation grading).');
+ }catch(e){status('Microphone/Vosk error: '+e.message)}
+ finally{b.disabled=false}
+}
+for(const c of labels){const button=document.createElement('button');button.textContent=c;button.onclick=()=>selectLetter(c);document.getElementById('letters').append(button)}
+selectLetter('A');showProgress();loadModel();
+</script></body></html>
