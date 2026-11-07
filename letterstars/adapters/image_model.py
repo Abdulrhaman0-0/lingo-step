@@ -1,71 +1,93 @@
-"""Genuine TFLite inference; refuses to infer when files/runtime are missing.
+"""Native Python LiteRT image inference adapter.
 
-Model metadata is explicit in models/image/config.json; never guess labels.
+Needs a *converted and validated* models/image/model.tflite + config.json.
+A Teachable Machine TensorFlow.js ZIP is NOT a TFLite model.
 """
-from pathlib import Path
 import json
+from pathlib import Path
 from ..domain.models import Prediction
+
 
 class TFLiteImageClassifier:
     def __init__(self, root):
-        self.root=Path(root); self.interpreter=None; self.labels=[]
-        self.ready=False;self.error="No trained image model installed"
+        self.root=Path(root)
+        self.ready=False
+        self.error="لم يتم تثبيت نموذج الصور المحوّل (TFLite)"
+        self.interpreter=None
+        self.labels=[]
         self._load()
 
     def _load(self):
         model=self.root/"model.tflite"
         config=self.root/"config.json"
-        if not model.is_file() or not config.is_file(): return
+        if not model.is_file() or not config.is_file():
+            return
         try:
             import numpy as np
             try:
-                from tflite_runtime.interpreter import Interpreter
+                from ai_edge_litert.interpreter import Interpreter
             except ImportError:
-                from tensorflow.lite import Interpreter
+                from tflite_runtime.interpreter import Interpreter
             c=json.loads(config.read_text(encoding="utf-8"))
-            labels=c["labels"]
-            if not isinstance(labels,list) or len(labels)<2 or not all(isinstance(x,str) for x in labels):
-                raise ValueError("Invalid labels in config.json")
+            labels=c.get("labels")
+            if labels != list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+                raise ValueError("Image model labels must be exactly A-Z in output order")
             self.labels=labels
-            self.means=float(c.get("input_mean",127.5))
-            self.scales=float(c.get("input_std",127.5))
+            self.mean=float(c.get("input_mean",127.5))
+            self.std=float(c.get("input_std",127.5))
+            if self.std==0:raise ValueError("input_std cannot be zero")
             self.channel_order=c.get("channel_order","RGB")
+            if self.channel_order not in ("RGB","BGR","GRAY"):
+                raise ValueError("Unexpected channel order")
             self.interpreter=Interpreter(model_path=str(model),num_threads=2)
             self.interpreter.allocate_tensors()
             self.input=self.interpreter.get_input_details()[0]
             self.output=self.interpreter.get_output_details()[0]
-            if self.input["shape"].size!=4: raise ValueError("Expected 4D image input")
-            self.ready=True;self.error=""
+            shape=self.input["shape"]
+            if len(shape)!=4 or shape[0]!=1 or shape[3] not in (1,3):
+                raise ValueError("Expected 1xHxWx(1 or 3) input")
+            self.ready=True
+            self.error=""
         except Exception as exc:
-            self.ready=False; self.error=f"Model loading failed: {exc}"
+            self.error=f"Image AI failed: {exc}"
+            self.ready=False
 
     def predict(self, frame):
-        if not self.ready: return None
+        if not self.ready:return None
         import cv2
         import numpy as np
         _,height,width,channels=self.input["shape"]
-        rgb=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        image=cv2.resize(rgb,(int(width),int(height)))
-        x=image.astype(np.float32)
+        if channels==1 or self.channel_order=="GRAY":
+            image=cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+        elif self.channel_order=="RGB":
+            image=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        else:
+            image=frame
+        image=cv2.resize(image,(int(width),int(height)))
+        if channels==1:
+            image=image.reshape(height,width,1)
+        elif image.ndim==2:
+            image=cv2.cvtColor(image,cv2.COLOR_GRAY2RGB)
         if self.input["dtype"]==np.float32:
-            if self.scales==0: raise ValueError("input_std cannot be zero")
-            x=(x-self.means)/self.scales
+            x=(image.astype(np.float32)-self.mean)/self.std
         elif self.input["dtype"]==np.uint8:
             x=image.astype(np.uint8)
         elif self.input["dtype"]==np.int8:
-            # float preprocessing then quantize according to actual tensor metadata.
             scale,zero=self.input["quantization"]
-            if scale<=0: raise ValueError("Invalid quantization scale")
-            x=np.clip(np.round(((x-self.means)/self.scales)/scale+zero),-128,127).astype(np.int8)
+            if scale<=0:raise ValueError("Invalid quantization")
+            x=np.clip(np.round(((image.astype(np.float32)-self.mean)/self.std)/scale+zero),
+                      -128,127).astype(np.int8)
         else:
-            raise ValueError("Unsupported input tensor type")
-        x=np.expand_dims(x,0)
-        self.interpreter.set_tensor(self.input["index"],x)
+            raise ValueError("Unsupported input dtype")
+        self.interpreter.set_tensor(self.input["index"],np.expand_dims(x,0))
         self.interpreter.invoke()
-        raw=self.interpreter.get_tensor(self.output["index"])[0]
+        raw=self.interpreter.get_tensor(self.output["index"])[0].reshape(-1)
         scale,zero=self.output["quantization"]
         scores=(raw.astype(np.float32)-zero)*scale if scale>0 else raw.astype(np.float32)
-        if len(scores)!=len(self.labels):
-            raise ValueError("Output length does not match configured labels")
-        best=int(np.argmax(scores))
-        return Prediction(self.labels[best].strip().upper(),float(scores[best]),"real")
+        if len(scores)!=26 or not np.all(np.isfinite(scores)):
+            raise ValueError("Unexpected output scores")
+        # This classifier expects a probability / softmax output, not logits.
+        if float(np.min(scores)) < -0.001 or float(np.max(scores)) > 1.001 or abs(float(np.sum(scores))-1)>0.05:
+            raise ValueError("Expected 26 probabilities; check model export / softmax")
+        index=int(np.argmax(scores))
+        return Prediction(self.labels[index],float(scores[index]),"real")
