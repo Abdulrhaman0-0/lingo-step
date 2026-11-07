@@ -45,7 +45,7 @@ class Painter:
         self.hits.append((action,b))
     def header(self):
         self.rect((35,27,173,85),'#D8DEE5',29);self.rect((35,22,173,79),'white',29)
-        self.text(104,52,'↩ العودة',20,'#12628B',True);self.hits.append(('back',(35,22,173,79)))
+        self.text(104,52,'العودة',20,'#12628B',True);self.hits.append(('back',(35,22,173,79)))
         self.rect((1000,20,1245,89),'white',33);self.logo(1123,57,.26)
     def card(self,action,b,color,shadow,title,sub,symbol):
         x1,y1,x2,y2=b
@@ -57,7 +57,7 @@ class Painter:
         self.text(cx,y1+189,title,28,'#37271F',True)
         self.text(cx,y1+236,sub,19,'#47382D')
         self.d.ellipse((cx-28,y2-85,cx+28,y2-29),fill='white')
-        self.text(cx,y2-57,'➜',28,INK,True,False)
+        self.text(cx,y2-57,'›',28,INK,True,False)
         self.hits.append((action,b))
     def draw(self,page,letter='A',name='',stats=None,recent=None,status='',video=None):
         self.decor();stats=stats or dict(correct=0,total=0,try_again=0)
@@ -79,7 +79,7 @@ class Painter:
             self.card('learn',(855,480,1220,828),BLUE,'#17658D','التعليم الأساسي','ابدأ المغامرة','A')
         elif page=='learn':
             self.header();self.rect((555,136,725,176),'#FFF0BA',21)
-            self.text(640,157,'المستوى ١  ★',20,'#745414',True)
+            self.text(640,157,'المستوى ١',20,'#745414',True)
             self.rect((412,205,868,645),'#DEDCD7',43)
             self.rect((412,196,868,632),'white',43)
             self.text(461,239,'♥',32,'#FA6E90',True,False);self.star(822,242,19)
@@ -87,8 +87,8 @@ class Painter:
             self.text(640,584,'الحرف '+letter,25,'#64748B')
             self.button('speak','التدرب على النطق',(218,661,616,744),RED,'#A43B22')
             self.button('listen','استماع',(665,661,1063,744),BLUE,'#196996')
-            self.button('prev','السابق  ←',(218,776,616,858),'#FFE29A','#A98920',INK)
-            self.button('next','التالي  →',(665,776,1063,858),GOLD,'#A17F1B',INK)
+            self.button('prev','السابق',(218,776,616,858),'#FFE29A','#A98920',INK)
+            self.button('next','التالي',(665,776,1063,858),GOLD,'#A17F1B',INK)
         elif page=='revision':
             self.header();self.rect((554,116,727,156),'#FFF0BA',21);self.text(641,137,'المراجعة  ★',21,'#745414',True)
             self.rect((223,191,1057,620),'#DAD8D2',35)
@@ -105,7 +105,7 @@ class Painter:
             self.d.ellipse((250,677,324,746),fill=RED);self.text(287,712,'▶',27,'white',True,False)
             self.hits.append(('listen',(225,666,1055,752)))
             self.button('camera','فتح / إيقاف الكاميرا',(225,777,612,858),BLUE,'#18658F',size=25)
-            self.button('next','التالي  →',(675,777,1060,858),GOLD,'#A88616',INK)
+            self.button('next','التالي',(675,777,1060,858),GOLD,'#A88616',INK)
         elif page=='progress':
             self.header();self.logo(640,178,.75)
             self.text(640,318,'نجومك وإنجازاتك',43,INK,True)
