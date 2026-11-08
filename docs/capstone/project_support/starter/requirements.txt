@@ -1,0 +1,5 @@
+vosk
+sounddevice
+opencv-python
+pytesseract
+requests
