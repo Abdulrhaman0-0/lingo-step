@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-python3 main.py
+if [[ ! -x .venv/bin/python ]]; then
+    echo 'Run first: bash setup_raspberry.sh' >&2
+    exit 1
+fi
+exec .venv/bin/python main.py

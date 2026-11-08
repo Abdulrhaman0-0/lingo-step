@@ -18,11 +18,17 @@ Native UI references: six images supplied in the project conversation on 2026-11
 
 ## Start on Raspberry Pi
 
+For one-file install, OS/project/dependency updates, Vosk download and app launch
+on Raspberry Pi OS **64-bit Desktop**, run `bash setup_raspberry.sh`.
+The installer can also be copied outside the repository: it clones the project
+to `~/lingo-step` if needed. Run it as your normal user, without `sudo`.
+Later launches only need `bash scripts/run_pi.sh`.
+See [Arabic setup instructions](docs/RASPBERRY_SETUP_AR.md).
+
 ```bash
 git clone https://github.com/Abdulrhaman0-0/lingo-step.git
 cd lingo-step
-bash scripts/setup_pi_native.sh
-.venv/bin/python main.py
+bash setup_raspberry.sh
 ```
 
 GitHub repository is public: cloning needs no authentication; pushing still requires write access. `python3 main.py` also works once Python's dependencies are available in the active environment.
