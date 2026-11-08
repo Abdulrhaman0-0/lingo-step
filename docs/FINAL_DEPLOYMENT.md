@@ -139,4 +139,4 @@ Guardian creates an account at the cloud website with a strong password; from ch
 7. Guardian portal: signup/login, pairing code, second parent cannot see the first parent's child, logout, responsive mobile view.
 8. Power-cycle Raspberry Pi: saved data remains, no data loss. Cloud recovery, HTTPS, and credentials verified.
 
-Only after these are complete should the feature PR be merged into `main`; then Pi can use `git switch main && git pull --ff-only origin main`.
+The feature implementation may be merged into `main` as **code integrated / hardware not certified** after passing CI. Raspberry Pi can then use `git switch main && git pull --ff-only origin main`. Do not claim the project exhibit-ready until physical and live-cloud checks above pass.
