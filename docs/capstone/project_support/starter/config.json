@@ -1,0 +1,5 @@
+{
+  "letters": ["A", "B", "C", "D", "E"],
+  "vosk_model_dir": "model",
+  "usb_camera_index": 0
+}
