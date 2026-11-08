@@ -72,7 +72,7 @@ Example config layout (values MUST be verified for the converted model, not gues
 
 Never rename `model.json` to `model.tflite`. Without it the camera preview still works and visibly says image inference is unavailable.
 
-The image model currently has no explicit `NO_CARD` class; it can misclassify blank scenes with high confidence. Test on false positives and acquire more training data if required.
+The supplied model now contains A–Z plus an `others` rejection class. Winning `others` predictions are discarded without grading. Measure false positives on blank/background scenes and real card accuracy; the label alone does not establish rejection quality.
 
 ## Step 4 — start the child app
 

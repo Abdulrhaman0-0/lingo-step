@@ -1,28 +1,44 @@
-# Test the A–E image model locally (Windows first, Raspberry Pi second)
+# Test the complete A–Z + others image model
 
-Repository: https://github.com/Abdulrhaman0-0/lingo-step (public; no credentials needed to clone).
+The filename is retained for existing links. The previous A–E demo has been
+replaced by the supplied 27-class model (A–Z plus `others`).
 
-1. Upload the real binary file model.tflite (2,091,532 bytes) to models/image/ in the GitHub main branch. config.json and labels.txt are already committed. On a different branch, commit to that branch first and merge before pulling main.
-2. On Windows PowerShell:
+## Windows PowerShell
 
-    git clone https://github.com/Abdulrhaman0-0/lingo-step.git
-    cd lingo-step
-    py -m venv .venv
-    .\.venv\Scripts\python.exe -m pip install -r requirements-ui.txt
-    .\.venv\Scripts\python.exe -m pip install numpy opencv-python tensorflow
-    .\.venv\Scripts\python.exe main.py
+From the project folder:
 
-3. Expected startup: welcome screen, child profile, Learn, Revision, Progress. A–E camera inference is enabled only when the real binary model and a working LiteRT/TensorFlow interpreter are installed; F–Z are NOT trained.
-4. Test A–E printed flashcards, with the USB webcam pointed toward the card, vary lighting and angle. Negative/no-card input is not a learned class and must not be used as an accuracy benchmark.
-5. For speech recognition add vosk and sounddevice, and place an actual Vosk English model at models/speech/vosk-model-small-en-us-0.15. Vosk letter-name recognition is not pronunciation grading.
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-ui.txt
+.\.venv\Scripts\python.exe -m pip install "numpy>=1.26,<3" "opencv-python>=4.8,<5" "ai-edge-litert>=1.4,<3" vosk sounddevice
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_image_model_runtime.py -v
+.\.venv\Scripts\python.exe main.py
+```
 
-On Raspberry Pi 5:
+Vosk additionally requires the English language model in
+models/speech/vosk-model-small-en-us-0.15, or LINGOSTEP_VOSK_MODEL pointing to it.
 
-    cd ~/lingo-step
-    git pull --ff-only origin main
-    bash scripts/setup_pi_native.sh
-    .venv/bin/python main.py
+## Raspberry Pi 5
 
-If the interpreter raises an error, send the full terminal output. Do not rename a TensorFlow.js model.json to model.tflite.
+Use Raspberry Pi OS 64-bit Desktop. Transfer the updated project, or publish
+it to GitHub before updating from there. From the project folder run:
 
-**Status:** This is a 5-class integration demo pending genuine camera/inference verification and the final 26-class model.
+```bash
+bash setup_raspberry.sh
+```
+
+Setup installs/updates dependencies, downloads Vosk, checks both models and
+opens the app. For later offline launches use `bash scripts/run_pi.sh`.
+
+## Actual camera check
+
+1. Select a child, then Revision. All targets A–Z must be supported.
+2. Show each printed letter, including F and Z, with different angles/lighting.
+3. Test wrong cards: stable confident wrong letters should request another try.
+4. Show backgrounds/no card. Winning `others` predictions must request a stable
+   card without recording an incorrect answer or awarding a star.
+5. Compare preprocessing/predictions with the training export preview. Measure
+   false positives and accuracy rather than treating confidence as accuracy.
+
+Automated model inference on generated frames checks integration only; it does
+not validate real camera accuracy or Raspberry Pi hardware.

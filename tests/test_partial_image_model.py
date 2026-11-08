@@ -8,8 +8,12 @@ class ModelLabelTests(unittest.TestCase):
     def test_partial_and_complete(self):
         self.assertEqual(validate_labels(list("ABCDE")), list("ABCDE"))
         self.assertEqual(validate_labels(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+        complete = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["others"]
+        self.assertEqual(validate_labels(complete), complete)
     def test_wrong_order_invalid(self):
-        for labels in ([],["A"],["A","C"],["B","A"],["A","A"],["A","a"]):
+        for labels in ([],["A"],["A","C"],["B","A"],["A","A"],["A","a"],
+                       list("ABCDE") + ["others"],
+                       list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["unknown"]):
             with self.assertRaises(ValueError):
                 validate_labels(labels)
     def test_unsupported_target_is_never_inferred_or_saved(self):

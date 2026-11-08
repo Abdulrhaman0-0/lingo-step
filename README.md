@@ -33,7 +33,7 @@ bash setup_raspberry.sh
 
 GitHub repository is public: cloning needs no authentication; pushing still requires write access. `python3 main.py` also works once Python's dependencies are available in the active environment.
 
-**Current image-model demo:** The team supplied a five-class A–E TensorFlow Lite export. Its config/labels and partial-class safeguards are in the repository, but the 2 MB `model.tflite` binary must still be uploaded once to `models/image/` through GitHub. Until then camera preview works but image inference remains unavailable. A full A–Z model is still required for final delivery. Vosk English model downloads during Pi setup. See [A–E laptop test steps](docs/AE_MODEL_DESKTOP_TEST.md).
+**Current image model:** The supplied TensorFlow Lite model includes A–Z plus `others` (27 classes). The binary, labels and matching config are in `models/image/`. A winning `others` prediction is rejected without saving a failed attempt or selecting a runner-up letter. Actual camera accuracy and preprocessing still need validation with real cards/backgrounds. Vosk English model downloads during Pi setup. See [image-model test steps](docs/AE_MODEL_DESKTOP_TEST.md).
 
 ## Parent cloud site
 
@@ -56,7 +56,7 @@ letterstars/adapters/          # OpenCV camera, LiteRT image AI, Vosk speech, au
 letterstars/infrastructure/    # Per-child SQLite + background cloud outbox
 cloud/portal.py                # Parent Flask authentication, dashboard & API
 cloud/templates/               # Responsive parent website
-models/image/                  # Converted, validated TFLite model (pending)
+models/image/                  # Supplied A–Z + others TFLite model and config
 models/speech/                 # Vosk acoustic model (downloaded at setup)
 tests/                         # Python 3.11 and 3.13 CI tests
 docs/FINAL_DELIVERY_CHECKLIST.md

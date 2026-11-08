@@ -1,8 +1,35 @@
 {
-  "labels": ["A", "B", "C", "D", "E"],
+  "labels": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "others"
+  ],
   "channel_order": "RGB",
   "input_mean": 127.5,
   "input_std": 127.5,
-  "demo_only": true,
-  "notes": "Validate color/normalization and inference against original Teachable Machine preview before deployment."
+  "notes": "Validate normalization and real card/background accuracy on the target camera."
 }

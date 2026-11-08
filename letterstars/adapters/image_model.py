@@ -1,6 +1,6 @@
 """Real TFLite image model adapter used by the native Python UI.
 
-Accepted labels: a contiguous A..N subset (demo A..E) or all A..Z.
+Accepted labels: a contiguous A..N subset, all A..Z, or A..Z + others.
 For a target letter outside the installed model's classes, the lesson
 refuses to save any revision prediction.
 """
@@ -12,6 +12,8 @@ ALPHABET = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 
 def validate_labels(labels):
+    if labels == ALPHABET + ["others"]:
+        return labels
     if not isinstance(labels, list) or len(labels) < 2 or len(labels) > 26:
         raise ValueError("Expected 2..26 letter labels")
     if labels != ALPHABET[:len(labels)]:
@@ -113,4 +115,7 @@ class TFLiteImageClassifier:
                 or abs(float(np.sum(scores)) - 1) > .05):
             raise ValueError("Expected normalized probabilities, not logits")
         best = int(np.argmax(scores))
+        # Reject background/unknown input; never promote the runner-up letter.
+        if self.labels[best] == "others":
+            return None
         return Prediction(self.labels[best], float(scores[best]), "real")

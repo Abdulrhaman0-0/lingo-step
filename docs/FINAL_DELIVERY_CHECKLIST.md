@@ -18,10 +18,10 @@ User-supplied images in chat on Nov 8: child app — welcome/create child, three
 - [x] **D11 — GitHub handoff**: develop safely on feature branch, create PR, preserve main until tested/approved, note every outstanding dependency and step to switch to main.
 
 ## Scope / limitations
-- Image AI input supplied as Teachable Machine TFJS `model.json`, `weights.bin`, `metadata.json`; the existing native Python TFLite adapter cannot consume these unchanged. **Converting/exporting a tested TFLite model** (or implementing a verified native runtime) is still required before image inference works in Python. Never rename a TFJS file to `.tflite`.
+- Image AI input supplied as Teachable Machine TFJS `model.json`, `weights.bin`, `metadata.json`; the existing native Python TFLite adapter cannot consume these unchanged. The user has since supplied a native TFLite model (see the complete-model handoff below); real camera validation is still required. Never rename a TFJS file to `.tflite`.
 - Vosk Python code can be integrated now; **Vosk English acoustic model** and tests with real USB microphone are pending.
 - Parent cloud **deployment URL, domain/TLS, accounts and tokens** are not provided. Code can be developed and tested locally but cannot be called deployed/production-ready.
-- Image classifier has only A–Z, **no NO_CARD class**; handle unknown confidence carefully; measure true accuracy rather than treating threshold as accuracy.
+- Current supplied image classifier has A–Z plus `others`; reject winning `others` predictions without grading. Measure actual card/background accuracy.
 - No real-world Pi, VNC, touchscreen, webcam, speaker, microphone, or cloud integration tests can be honestly claimed without test results.
 
 ## Delivery progress log
@@ -58,3 +58,10 @@ Last code-only acceptance update: **2026-11-08**.
 - Added config.json, labels.txt, unit tests and docs/AE_MODEL_DESKTOP_TEST.md; enabled TensorFlow Lite fallback for Windows testing where available.
 - The GitHub connection cannot directly upload the 2 MB binary from the chat attachment, so **models/image/model.tflite is still NOT in GitHub**. Upload the exact prepared file through GitHub web once, then pull on laptop/Raspberry.
 - The model has no NO_CARD class. RGB normalization and empirical accuracy must be verified with actual test cards.
+
+## 2026-11-08 complete TFLite model handoff (supersedes A–E notes above)
+- Installed the new supplied binary (2,100,332 bytes) and labels A–Z plus `others` (27 outputs).
+- Updated config and adapter to reject a winning `others` result; no runner-up substitution or failed attempt is stored.
+- The prior model conversion, missing-binary and A–E-only notes describe earlier handoffs. Current local source includes the complete supplied TFLite model.
+- New files/changes must be published before another device can retrieve them from GitHub.
+- Real card/background accuracy, normalization parity and Raspberry Pi hardware acceptance remain open.
