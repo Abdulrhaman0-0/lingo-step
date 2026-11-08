@@ -25,15 +25,15 @@ Add *public key only* in GitHub Settings → SSH Keys for an account authorized 
 ssh -T git@github.com
 ```
 
-For the current review branch:
+For the final integrated code on `main`:
 
 ```bash
 cd ~
-git clone -b feature/python-final-ui-cloud git@github.com:Abdulrhaman0-0/lingo-step.git
+git clone git@github.com:Abdulrhaman0-0/lingo-step.git
 cd lingo-step
 ```
 
-If already cloned: `git fetch origin && git switch feature/python-final-ui-cloud && git pull --ff-only`.
+If already cloned: `git fetch origin && git switch main && git pull --ff-only origin main`.
 
 ## Step 2 — install dependencies on Pi 5 (Debian Trixie aarch64)
 
