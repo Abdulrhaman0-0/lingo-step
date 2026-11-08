@@ -1,0 +1,2 @@
+# PythonAnywhere supplies WSGI; no camera, GUI, speech models or Gunicorn needed.
+Flask>=3.1,<4

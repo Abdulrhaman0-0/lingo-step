@@ -37,6 +37,10 @@ GitHub repository is public: cloning needs no authentication; pushing still requ
 
 ## Parent cloud site
 
+For the hosted school prototype, see [PythonAnywhere setup](docs/PYTHONANYWHERE_SETUP_AR.md).
+The Raspberry can save its remote connection once using `scripts/configure_cloud.py`
+and then launch normally with `scripts/run_pi.sh`.
+
 For the school prototype, hosting is optional. Run the child app and the
 simple parent website together on the Raspberry desktop:
 
