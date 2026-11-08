@@ -21,13 +21,14 @@ PALE = "#FFE39A"
 
 
 def font(size, bold=False, arabic=True):
-    fonts = (["NotoSansArabic-Bold.ttf", "DejaVuSans-Bold.ttf"] if bold else
-             ["NotoSansArabic-Regular.ttf", "DejaVuSans.ttf"]) if arabic else (
+    # DejaVu covers Arabic, Latin and UI symbols in the same mixed text run.
+    fonts = (["DejaVuSans-Bold.ttf", "NotoSansArabic-Bold.ttf"] if bold else
+             ["DejaVuSans.ttf", "NotoSansArabic-Regular.ttf"]) if arabic else (
              ["DejaVuSans-Bold.ttf"] if bold else ["DejaVuSans.ttf"])
     fonts += ["arialbd.ttf" if bold else "arial.ttf"]
-    for folder in ("/usr/share/fonts/truetype/noto", "/usr/share/fonts/truetype/dejavu",
-                   "C:/Windows/Fonts"):
-        for name in fonts:
+    for name in fonts:
+        for folder in ("/usr/share/fonts/truetype/dejavu", "/usr/share/fonts/truetype/noto",
+                       "C:/Windows/Fonts"):
             p = Path(folder)/name
             if p.exists():
                 return ImageFont.truetype(str(p), size)
@@ -97,7 +98,7 @@ class ScreenPainter:
         if action:self.targets.append((action,b))
 
     def header(self, section=""):
-        self.button("back","➜  العودة",(34,24,186,86),"#FFFFFF","#CBD4DA",TEAL,19)
+        self.button("back","العودة",(34,24,186,86),"#FFFFFF","#CBD4DA",TEAL,19)
         self.rect((1005,26,1250,93),"#E5E5E2",35)
         self.rect((1005,19,1250,85),"#FFFFFF",35)
         self.logo(1128,55,.26)
@@ -115,11 +116,17 @@ class ScreenPainter:
         self.panel(b,fill,shadow,40)
         self.rect((x1+24,y1+17,x2-24,y1+26),"#FFFFFF",8)
         self.draw_ctx.ellipse((mid-48,y1+45,mid+48,y1+141),fill="#FFFFFF9E")
-        self.centered(mid,y1+95,symbol,49,INK,True,False)
+        if symbol == "★":
+            self.star(mid,y1+95,25,INK)
+        elif symbol == "✓":
+            self.draw_ctx.line([(mid-18,y1+95),(mid-4,y1+109),(mid+21,y1+78)],fill=INK,width=6)
+        else:
+            self.centered(mid,y1+95,symbol,49,INK,True,False)
         self.centered(mid,y1+200,headline,31,"#3F2D23",True)
         self.centered(mid,y1+248,sub,17,"#53483C")
         self.draw_ctx.ellipse((mid-31,y2-79,mid+31,y2-17),fill="#FFFFFF")
-        self.centered(mid,y2-47,"➜",23,TEAL,True,False)
+        self.draw_ctx.line([(mid-10,y2-47),(mid+10,y2-47)],fill=TEAL,width=3)
+        self.draw_ctx.line([(mid+2,y2-55),(mid+10,y2-47),(mid+2,y2-39)],fill=TEAL,width=3)
         self.targets.append((action,b))
 
     def render(self,page,letter="A",name="",profiles=(),stats=None,recent=(),
@@ -128,14 +135,14 @@ class ScreenPainter:
         stats=stats or dict(correct=0,total=0,try_again=0,learned=0,letters=[])
         if page=="welcome":
             self.logo(640,150,1.02)
-            self.centered(640,324,"مرحبًا بك! 👋",40,INK,True)
+            self.centered(640,324,"مرحبًا بك!",40,INK,True)
             self.centered(640,377,"اختر حساب طفلك لنبدأ رحلة التعلم",24,"#586B7F")
             self.panel((124,420,1156,866),"#FFFFFF","#ECE8E0",38)
-            self.centered(1010,478,"من أنت؟ 📍",29,INK,True)
+            self.centered(1010,478,"من أنت؟",29,INK,True)
             self.rect((158,531,1125,638),"#F7F5F1",22)
             self.centered(1015,552,"إنشاء حساب الطفل",18,"#5F6676",True)
             self.rect((178,568,1104,621),"#FFFFFF",12,"#E2E3E5",2)
-            self.button("create","🚀 إنشاء حساب وابدأ التعلم",
+            self.button("create","إنشاء حساب وابدأ التعلم",
                         (160,664,1120,735),PINK,"#C7555A","#FFFFFF",27)
             # Existing children are rendered as independently selectable profiles.
             if len(profiles)>4:
@@ -150,7 +157,7 @@ class ScreenPainter:
                     self.centered(x1+110,821,p["name"][:14],16,TEAL,True)
                     self.targets.append(("profile:"+p["id"],b))
             else:
-                self.centered(640,802,"رحلتك تبدأ بحرف واحد ✨",18,"#737B89")
+                self.centered(640,802,"رحلتك تبدأ بحرف واحد",18,"#737B89")
         elif page=="home":
             self.rect((995,30,1250,90),"#FFFFFF",30)
             self.centered(1120,60,"حساب: "+name[:15],19,TEAL,True)
@@ -162,44 +169,49 @@ class ScreenPainter:
             self.card("learn",(842,465,1212,818),BLUE,"#1A6086",
                       "التعليم الأساسي","ابدأ المغامرة","A")
         elif page=="learn":
-            self.header("★ المستوى ١")
+            self.header("المستوى ١")
             self.panel((402,190,880,614),"#FFFFFF","#E1DDD5",42)
             self.star(474,234,16,"#F66A89");self.star(824,237,15,GOLD)
             self.centered(640,414,letter,218,BLUE,True,False)
             self.centered(640,581,"الحرف "+letter,24,"#6B7789",True)
-            self.button("speak","🎤 التدرب على النطق",(220,655,617,725),CORAL,"#B4472B","#FFFFFF",25)
-            self.button("listen","🔊 استماع",(665,655,1062,725),BLUE,"#16648E","#FFFFFF",27)
-            self.button("prev","السابق  ➜",(220,762,617,840),PALE,"#AE8D1A",INK,25)
-            self.button("next","➜  التالي",(665,762,1062,840),GOLD,"#AF8400",INK,27)
+            self.button("speak","التدرب على النطق",(220,655,617,725),CORAL,"#B4472B","#FFFFFF",25)
+            self.button("listen","استماع",(665,655,1062,725),BLUE,"#16648E","#FFFFFF",27)
+            self.button("prev","السابق",(220,762,617,840),PALE,"#AE8D1A",INK,25)
+            self.button("next","التالي",(665,762,1062,840),GOLD,"#AF8400",INK,27)
         elif page=="revision":
-            self.header("★ المراجعة")
+            self.header("المراجعة")
             self.panel((247,189,1034,620),"#F4F4EF","#E0DDD4",34)
             if camera is not None:
                 im=camera.copy()
                 im.thumbnail((750,388))
                 self.im.paste(im,(640-im.width//2,400-im.height//2))
             else:
-                self.centered(640,348,"📷",110,BLUE,True,False)
+                # Draw the camera directly: emoji fonts vary across Pi OS builds.
+                self.rect((568,304,712,396),BLUE,14)
+                self.rect((594,287,638,310),BLUE,7)
+                self.draw_ctx.ellipse((612,322,668,378),fill="#FFFFFF")
+                self.draw_ctx.ellipse((622,332,658,368),fill=BLUE)
                 self.centered(640,504,"افتح الكاميرا",36,INK,True)
             for x,y,angle in [(280,220,0),(1000,220,1),(280,586,2),(1000,586,3)]:
                 self.draw_ctx.arc((x-24,y-24,x+24,y+24),angle*90,angle*90+90,
                                   fill="#95C8E6",width=5)
             self.targets.append(("camera",(247,189,1034,620)))
             self.panel((247,656,1034,736),"#FFFFFF","#F7D3CB",42)
-            self.centered(752,695,"استمع للحرف وارفع البطاقة المناسبة",23,INK,True)
+            self.centered(740,695,"الحرف "+letter+" - ارفع البطاقة المناسبة",23,INK,True)
             self.draw_ctx.ellipse((285,668,345,728),fill=CORAL)
             self.centered(315,697,"♪",28,"#FFFFFF",True,False)
             self.targets.append(("listen",(247,656,1034,736)))
-            self.button("prev","السابق  ➜",(247,763,615,839),PALE,"#AE8D1A",INK,25)
-            self.button("next","➜  التالي",(667,763,1035,839),GOLD,"#AF8400",INK,27)
+            self.button("prev","السابق",(247,763,615,839),PALE,"#AE8D1A",INK,25)
+            self.button("next","التالي",(667,763,1035,839),GOLD,"#AF8400",INK,27)
             if camera is not None and not model_ready:
                 self.centered(640,596,"الكاميرا تعمل — موديل الصور غير مثبت",17,CORAL,True)
         elif page=="progress":
-            self.header("🏆 الملاحظات والإنجازات")
+            self.header("الملاحظات والإنجازات")
             self.panel((115,170,1150,823))
             self.centered(640,232,"نجومك وإنجازاتك",39,INK,True)
             self.rect((165,282,1110,434),"#FFE681",30)
-            self.centered(470,330,str(stats["correct"])+"  ★",48,"#8F6515",True)
+            self.centered(470,330,str(stats["correct"]),48,"#8F6515",True,False)
+            self.star(540,330,25,"#8F6515")
             self.centered(824,330,f'{stats["learned"]}/26 حرف',43,TEAL,True)
             self.centered(640,398,f'إجمالي المحاولات: {stats["total"]}  •  جرّب تاني: {stats["try_again"]}',21,INK,True)
             self.centered(640,483,"الحروف التي أتقنتها",26,INK,True)
@@ -222,7 +234,7 @@ class LingoStepApp:
             lesson,camera,image_model,progress,speech)
         self.cloud=cloud
         self.root=tk.Tk()
-        self.root.title("LingoStep | Salma STEM")
+        self.root.title("LingoStep | Capstone Project")
         self.root.geometry("1100x770")
         self.root.minsize(700,490)
         self.canvas=tk.Canvas(self.root,bg=IVORY,highlightthickness=0)
@@ -384,7 +396,7 @@ class LingoStepApp:
                 result,label,confidence=self.lesson.check_frame(frame)
                 if result in ("correct","try_again"):
                     if self.lesson.save_image_result(result,label,confidence):
-                        self.status=("★ ممتاز! إجابة صحيحة" if result=="correct" else
+                        self.status=("ممتاز! إجابة صحيحة" if result=="correct" else
                                      "جرب تاني — ظهر الحرف "+str(label))
                         self.stop_camera()
                         self._sync_in_background()
@@ -437,7 +449,7 @@ class LingoStepApp:
                 else:
                     _,letter,result,pred,transcript=msg
                     if result=="correct":
-                        self.status="★ أحسنت! تعرّفنا على اسم الحرف "+letter
+                        self.status="أحسنت! تعرّفنا على اسم الحرف "+letter
                         self._sync_in_background()
                     elif result=="try_again":
                         self.status="جرب تاني — سمعنا: "+(transcript or "?")[:24]

@@ -127,7 +127,7 @@ class Painter:
 class LetterStarsUI:
     def __init__(self,lesson,camera,image_model):
         self.lesson,self.camera,self.image_model=lesson,camera,image_model
-        self.root=tk.Tk();self.root.title('LingoStep | Salma STEM')
+        self.root=tk.Tk();self.root.title('LingoStep | Capstone Project')
         self.root.geometry('1100x770');self.root.minsize(640,480)
         self.canvas=tk.Canvas(self.root,bg=BG,highlightthickness=0)
         self.canvas.pack(fill='both',expand=True)
