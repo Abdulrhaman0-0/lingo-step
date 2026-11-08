@@ -38,7 +38,10 @@ class TFLiteImageClassifier:
             try:
                 from ai_edge_litert.interpreter import Interpreter
             except ImportError:
-                from tflite_runtime.interpreter import Interpreter
+                try:
+                    from tflite_runtime.interpreter import Interpreter
+                except ImportError:
+                    from tensorflow.lite import Interpreter
             options = json.loads(config.read_text(encoding="utf-8"))
             self.labels = validate_labels(options["labels"])
             self.mean = float(options.get("input_mean", 127.5))
