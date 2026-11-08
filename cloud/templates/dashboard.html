@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LingoStep | الإنجازات</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head>
+<body class="dashboard-page"><main class="dashboard-shell">
+<header class="topbar">
+ <div class="logo small-logo" aria-label="LingoStep"><span>L</span><span>i</span><span>n</span><span>g</span><span>o</span><span>S</span><span>t</span><span>e</span><span>p</span>✨</div>
+ <h1>🏆 الملاحظات والإنجازات</h1>
+ <form method="post" action="{{url_for('logout')}}"><input type="hidden" name="csrf" value="{{csrf_token()}}"><button class="back" type="submit">تسجيل الخروج ←</button></form>
+</header>
+{% for message in get_flashed_messages() %}<p class="notice">{{message}}</p>{% endfor %}
+{% if students %}
+<nav class="child-tabs" aria-label="حسابات الأطفال">
+{% for child in students %}<a class="{{'active' if child.student_id==selected else ''}}" href="{{url_for('dashboard',child=child.student_id)}}">{{child.name}}</a>{% endfor %}
+</nav>
+{% endif %}
+{% if stats %}
+<div class="dashboard-grid">
+ <aside class="gold-summary">
+   <div class="pill">🌟 بطلنا المتميز {{stats.name}}</div>
+   <div class="star-badge">★</div>
+   <h2>★ {{stats.correct}} نجمة ذهبية</h2>
+   <h3>أحسنت! استمر في التعلم! 🚀</h3>
+   <p>كل حرف جديد خطوة جميلة نحو المستقبل.</p>
+ </aside>
+ <section class="metrics">
+   <div class="white-panel count-panel">
+    <h2>📚 الحروف المتعلمة</h2>
+    <strong>{{stats.learned}} / 26</strong>
+    <div class="progress-bar" role="progressbar" aria-valuenow="{{stats.learned}}" aria-valuemin="0" aria-valuemax="26"><div style="width:{{stats.learned / 26 * 100}}%"></div></div>
+   </div>
+   <div class="white-panel alphabet-panel">
+    <h2>🚀 مسار التقدم في الحروف</h2>
+    <p>{{stats.learned}} من 26 حرفًا</p>
+    <div class="letters" dir="ltr">
+      {% for letter in alphabet %}<span class="{{'done' if letter in stats.letters else ''}}">{{letter}}</span>{% endfor %}
+    </div>
+    <p class="muted">{{stats.total}} محاولة • {{stats.try_again}} تحتاج مزيدًا من التدريب</p>
+   </div>
+   <div class="white-panel achievements">
+    <h2>🏆 إنجازاتي وأوسمتي</h2>
+    <div class="achievement-grid">
+      {% for title,earned in stats.achievements %}<div class="achievement {{'earned' if earned else ''}}"><span>🏅</span><strong>{{title}}</strong><small>{{'تم الإنجاز' if earned else 'لم يتحقق بعد'}}</small></div>{% endfor %}
+    </div>
+   </div>
+   <div class="white-panel activity">
+    <h2>📖 آخر المحاولات</h2>
+    {% if history %}<ul>
+       {% for item in history %}<li><span>{{item.timestamp[:16]}}</span><strong>{{item.target}} → {{item.observed or '—'}}</strong><em class="{{'ok' if item.result=='correct' else 'retry'}}">{{'صحيح' if item.result=='correct' else 'حاول ثانية'}}</em></li>{% endfor %}
+    </ul>{% else %}<p>لسه مفيش محاولات متزامنة.</p>{% endif %}
+   </div>
+ </section>
+</div>
+{% else %}
+<div class="white-panel empty-state"><h2>ابدأ متابعة طفلك ⭐</h2><p>بعد تفعيل المزامنة على جهاز Raspberry Pi، افتح قسم الإنجازات في التطبيق وانسخ كود الربط الخاص بالطفل.</p></div>
+{% endif %}
+<section class="pairing white-panel">
+<h2>🔐 ربط حساب طفل جديد</h2>
+<p>استخدم كود الربط الذي يظهر داخل تطبيق Python على جهاز الطفل. يلزم أن تصل أول محاولة إلى السيرفر قبل الربط.</p>
+<form method="post" action="{{url_for('pair')}}">
+<input type="hidden" name="csrf" value="{{csrf_token()}}">
+<label for="code">كود الربط الخاص</label>
+<input name="code" id="code" minlength="16" maxlength="100" required placeholder="الصق الكود هنا">
+<button type="submit" class="primary">ربط الطفل</button>
+</form>
+</section>
+</main></body></html>
