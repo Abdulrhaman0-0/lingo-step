@@ -553,6 +553,11 @@ class LingoStepApp:
                 self.render()
         except queue.Empty:
             pass
+        audio_error = self.lesson.voice.pop_error()
+        if audio_error:
+            print("Audio playback error:", audio_error, flush=True)
+            self.status="الصوت لم يعمل — افحص السماعة وشغّل فحص الصوت من الطرفية"
+            self.render()
         self.root.after(150,self.poll_workers)
 
     def answer_feedback(self, result):

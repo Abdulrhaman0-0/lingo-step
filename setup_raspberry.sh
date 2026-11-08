@@ -42,7 +42,7 @@ main() {
         python3 python3-pip python3-venv python3-tk python3-opencv \
         python3-pil python3-pil.imagetk python3-numpy \
         fonts-noto-core fonts-dejavu-core libraqm0 \
-        espeak-ng v4l-utils alsa-utils portaudio19-dev libportaudio2 \
+        espeak-ng v4l-utils alsa-utils pipewire-bin pulseaudio-utils portaudio19-dev libportaudio2 \
         libatomic1 libgomp1
 
     echo '[2/6] Downloading/updating LingoStep...'
