@@ -2,10 +2,15 @@ __pycache__/
 *.py[cod]
 .venv/
 .vscode/
+.env
+.env.*
+!.env.example
 data/*.db
 data/*.db-*
-models/image/model.tflite
-models/speech/*.tflite
-models/speech/*.h5
+cloud/data/
+cloud/.venv/
+models/speech/vosk-model-*/
 *.log
 .DS_Store
+# Team may intentionally commit validated models/image/model.tflite
+# and images via Git LFS, depending on model size and license.
