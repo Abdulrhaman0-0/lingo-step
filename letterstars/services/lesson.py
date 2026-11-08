@@ -27,6 +27,10 @@ class LessonService:
         self.voice.say_letter(self.target)
 
     def check_frame(self, frame):
+        # Never grade a target outside the trained model's class set.
+        if self.image_model.ready and self.target not in self.image_model.labels:
+            self.frame_predictions.clear()
+            return "unsupported_letter", None, None
         prediction = self.image_model.predict(frame)
         if prediction is None:
             self.frame_predictions.clear()
