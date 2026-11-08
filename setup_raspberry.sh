@@ -99,7 +99,7 @@ import arabic_reshaper
 import bidi
 import sounddevice as sd
 from ai_edge_litert.interpreter import Interpreter
-from letterstars.adapters.vosk_speech import VoskSpeechClassifier
+from letterstars.adapters.vosk_speech import VoskSpeechClassifier, microphone_rate
 from letterstars.adapters.image_model import TFLiteImageClassifier
 from letterstars.ui.final_ui import ScreenPainter
 
@@ -114,9 +114,9 @@ if not image.ready:
 ScreenPainter().render("welcome")
 print("UI, OpenCV, Vosk and image model OK. Image classes:", ", ".join(image.labels))
 try:
-    device = sd.query_devices(kind="input")
-    sd.check_input_settings(samplerate=16000, channels=1, dtype="int16")
-    print("Microphone:", device["name"])
+    device = sd.query_devices(speech.device, "input")
+    rate = microphone_rate(speech.device, speech.rate)
+    print("Microphone:", device["name"], "sample rate:", rate)
 except (sd.PortAudioError, ValueError) as exc:
     print("MICROPHONE CHECK:", exc, "\nConnect/select a microphone before using speech.")
 PY

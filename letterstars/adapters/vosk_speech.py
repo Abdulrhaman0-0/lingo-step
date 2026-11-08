@@ -55,10 +55,28 @@ def parse_vosk_result(result):
     return Prediction(label, sum(confidences)/len(confidences), "real"), transcript
 
 
+def microphone_rate(device=None, preferred=16000):
+    """Use the requested rate if supported, otherwise the device's native rate."""
+    import sounddevice as sd
+    try:
+        sd.check_input_settings(device=device, samplerate=preferred,
+                                channels=1, dtype="int16")
+        return preferred
+    except sd.PortAudioError:
+        native = int(sd.query_devices(device, "input")["default_samplerate"])
+        sd.check_input_settings(device=device, samplerate=native,
+                                channels=1, dtype="int16")
+        return native
+
+
 class VoskSpeechClassifier:
-    def __init__(self, model_path, duration=2.5, rate=16000):
+    def __init__(self, model_path, duration=2.5, rate=16000, device=None):
         self.model_path = Path(model_path)
         self.rate = int(rate)
+        selection = device if device is not None else os.getenv("LINGOSTEP_MIC_DEVICE")
+        if isinstance(selection, str) and selection.strip().isdigit():
+            selection = int(selection.strip())
+        self.device = selection
         self.duration = float(duration)
         self.model = None
         self.ready = False
@@ -79,17 +97,20 @@ class VoskSpeechClassifier:
             raise RuntimeError("Vosk unavailable: " + self.error)
         import sounddevice as sd
         from vosk import KaldiRecognizer
+        rate = self.rate
         # Tk UI calls this in a worker: capture must never freeze mainloop.
         if audio is None:
-            data = sd.rec(int(self.duration*self.rate), samplerate=self.rate,
-                          channels=1, dtype="int16")
+            rate = microphone_rate(self.device, self.rate)
+            data = sd.rec(int(self.duration*rate), samplerate=rate,
+                          channels=1, dtype="int16", device=self.device)
             sd.wait()
             pcm = data.tobytes()
         elif isinstance(audio, bytes):
             pcm = audio
         else:
             raise ValueError("Expected PCM16 bytes or microphone recording")
-        rec = KaldiRecognizer(self.model, self.rate)
+        # Tell Vosk the actual PCM rate, including 44.1/48 kHz USB recordings.
+        rec = KaldiRecognizer(self.model, rate)
         rec.SetWords(True)
         rec.AcceptWaveform(pcm)
         result = json.loads(rec.FinalResult())
