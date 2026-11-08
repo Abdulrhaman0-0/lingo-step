@@ -5,10 +5,11 @@ import threading
 import tkinter as tk
 from tkinter import messagebox
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageTk
+from PIL import Image, ImageDraw, ImageFont, ImageTk, features
 from ..domain.models import LETTERS
 
 W, H = 1280, 900
+HAS_RAQM = features.check_feature("raqm")
 IVORY = "#FCFAF4"
 INK = "#273348"
 BLUE = "#45A6F2"
@@ -23,6 +24,7 @@ def font(size, bold=False, arabic=True):
     fonts = (["NotoSansArabic-Bold.ttf", "DejaVuSans-Bold.ttf"] if bold else
              ["NotoSansArabic-Regular.ttf", "DejaVuSans.ttf"]) if arabic else (
              ["DejaVuSans-Bold.ttf"] if bold else ["DejaVuSans.ttf"])
+    fonts += ["arialbd.ttf" if bold else "arial.ttf"]
     for folder in ("/usr/share/fonts/truetype/noto", "/usr/share/fonts/truetype/dejavu",
                    "C:/Windows/Fonts"):
         for name in fonts:
@@ -43,9 +45,17 @@ class ScreenPainter:
                                        fill=fill, outline=outline, width=width)
 
     def centered(self, x, y, value, size=28, color=INK, bold=False, arabic=True):
-        self.draw_ctx.text((int(x), int(y)), str(value),
+        text = str(value)
+        options = {}
+        if HAS_RAQM:
+            options["direction"] = "rtl" if arabic else "ltr"
+        elif arabic:
+            import arabic_reshaper
+            from bidi.algorithm import get_display
+            text = get_display(arabic_reshaper.reshape(text))
+        self.draw_ctx.text((int(x), int(y)), text,
                            font=font(size, bold, arabic), fill=color,
-                           anchor="mm", direction="rtl" if arabic else "ltr")
+                           anchor="mm", **options)
 
     def star(self, x, y, radius, color):
         pts = []
