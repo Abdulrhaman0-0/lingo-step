@@ -380,7 +380,6 @@ class LingoStepApp:
         window.geometry("800x563")
         window.minsize(600, 422)
         window.transient(self.root)
-        window.grab_set()
         canvas = tk.Canvas(window, bg=IVORY, highlightthickness=0)
         canvas.pack(fill="both", expand=True)
         state = {"copied": False}
@@ -395,7 +394,7 @@ class LingoStepApp:
             im, targets = painter.render("pairing", pair_code=code,
                 status="تم نسخ الكود" if state["copied"] else "")
             state.update(scale=scale, ox=ox, oy=oy, targets=targets)
-            state["photo"] = ImageTk.PhotoImage(im.resize((width,height),Image.Resampling.LANCZOS))
+            state["photo"] = ImageTk.PhotoImage(im.resize((width,height),Image.Resampling.LANCZOS), master=canvas)
             canvas.delete("all")
             canvas.create_image(ox,oy,image=state["photo"],anchor="nw")
 
@@ -419,6 +418,11 @@ class LingoStepApp:
         canvas.bind("<Configure>", draw)
         canvas.bind("<Button-1>", click)
         window.bind("<Escape>", lambda _: window.destroy())
+        # On Pi/Wayland a grab before the window is visible can raise TclError,
+        # leaving an empty grey window before its canvas is even created.
+        window.wait_visibility()
+        draw()
+        window.grab_set()
 
     def profile_picker(self):
         profiles=self.store.students()
@@ -426,7 +430,6 @@ class LingoStepApp:
         window.title("اختيار الطفل")
         window.geometry("520x450")
         window.transient(self.root)
-        window.grab_set()
         tk.Label(window,text="اختار حساب الطفل",font=("Arial",22,"bold")).pack(pady=14)
         listing=tk.Listbox(window,font=("Arial",18),height=10,justify="right")
         for profile in profiles:
@@ -440,6 +443,8 @@ class LingoStepApp:
                 self.select(child_id)
         listing.bind("<Double-Button-1>",choose)
         tk.Button(window,text="متابعة",font=("Arial",19),command=choose).pack(pady=14)
+        window.wait_visibility()
+        window.grab_set()
 
     def navigate(self,page):
         self.stop_camera()
