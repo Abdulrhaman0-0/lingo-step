@@ -1,0 +1,378 @@
+TEAM SALMA  |  CAPSTONE EXECUTION PLAYBOOK
+خطة تنفيذ مشروع تعليم الحروف التفاعلي
+ملف قيادة المقابلات — تعليمات الشرح، التاسكات، المخرجات، الاختبارات، ومعايير الإقفال
+الإصدار: 6 نوفمبر 2026  |  مدة العمل المخططة: 3 أيام  |  اليوم الأول: لابتوبات فقط — بدون Raspberry Pi
+قرار نطاق المشروع
+الجهاز يعلّم أسماء الحروف الإنجليزية A–Z فقط (وليس الكلمات أو أصوات الحروف داخل الكلمات). في Learn: الحرف يظهر ويُسمَع، ثم يسجل المستخدم اسم الحرف، ويقدّم النظام نتيجة تعرف/إعادة محاولة. في Revision: يُسمع اسم الحرف بدون عرضه، ويُرفع كارت أمام الكاميرا، فيُقارن الحرف المتعرف عليه بالمطلوب.
+الأجهزة: Raspberry Pi 5 + شاشة Touch + USB Webcam؛ مايك USB لم يُشترَ بعد؛ سماعة Bluetooth مؤقتًا. يوم 1: تجهيز البيانات والـAI على اللابتوب؛ يوم 2: تشغيل الأجهزة والدمج؛ يوم 3: الاختبارات والـCloud والمعرض.
+قواعد واقعية لا نساوم عليها
+☐  التعرف على اسم الحرف المنطوق ليس تقييمًا لجودة مخارج الحروف. لا نقول للطفل «نطقك غلط» اعتمادًا على Speech-to-Text وحده؛ نستخدم «لم أتعرف على الصوت، جرّب مرة ثانية».
+☐  الحروف المنفردة مثل B / D / E / G / P / T / V وA / J / K متشابهة صوتيًا؛ أي نموذج عام قد يخطئ. اختبروا واحتفظوا بحالة «غير متأكد».
+☐  لا يُستخدم وجه الطفل أو صوته الحقيقي في Dataset أو Cloud دون إذن مناسب؛ في البداية نستخدم تسجيلات متطوعين بالغين، ولا نرفع الصوت الخام.
+☐  الدقة 80% شرط يجب إثباته بقياس مستقل موثق، وليس افتراضًا. نجاح OCR وحده لا يثبت دقة الـSpeech.
+☐  النسخة المستهدفة بنهاية اليوم الثالث: 5 حروف عاملة End-to-End ومعها مسار واضح لتعميم A–Z. التعميم الكامل هدف إضافي إذا نجح الأساس.
+مصفوفة المتطلبات والنجاح
+قبل الاجتماع: تجهيزات من كل عضو
+☐  لابتوب واحد على الأقل عليه Python 3.11 أو 3.12 (يفضل)، مساحة 4 GB، وإنترنت لتحميل المكتبات/النماذج.
+☐  عضو يصمم كروت A–Z بخط عريض (حرف واحد لكل كارت؛ حجم موحد)، ويحفظ ملفات PDF/PNG للطباعة.
+☐  عضو يحضر صورًا أو عينات اختبار مختلفة عن صور التدريب، ويسجل Label الحقيقي بوضوح.
+☐  عضو يجهز Google Sheet أو CSV يسجل فيه رقم التجربة والحرف المتوقع والنتيجة وزمن الاستجابة.
+☐  التأكد من توفير microSD 32GB، كابل/مزود طاقة رسمي/موثوق لـPi 5 بقدرة 5.1V/5A، وكابلات الشاشة والـUSB.
+خطة الوقت المقترحة
+اليوم الأول — AI FIRST / NO RASPBERRY
+هدف الاجتماع: نخرج بحزمتين قابلتين للتشغيل على اللابتوب: 1) التعرف على حرف الكارت من صورة؛ 2) Pipeline أولي للصوت يحدد هل التعرف على أسماء الحروف ممكن بالدقة المقبولة؛ مع واجهة بسيطة وبيانات اختبار جاهزة.
+D1-01 | فهم النظام وتوزيع الأدوار
+الهدف: كل شخص فاهم Input/Processing/Output وما المطلوب إثباته
+مين ينفذ؟ أنت تقود؛ واحد AI Vision؛ واحد Audio؛ واحد UI/Documentation
+الخطوات العملية:
+☐  ارسموا مخطط: Learn → text letter → TTS → microphone → recognition → decision → feedback.
+☐  ارسموا مخطط: Revision → target letter → TTS → webcam/card → OCR/classifier → compare → feedback.
+☐  اتفقوا: نبدأ A,B,C,D,E، ثم نجرب حروف متشابهة B/D/G بعد نجاح البداية.
+☐  اعملوا مجلد مشروع واحد وتحديد أصحاب الملفات وقناة مشاركة الإصدارات.
+إنت تقول/تسأل إيه؟
+• «إيه الـInput وإيه الـGround Truth وإيه الـOutput في كل وضع؟»
+• «إيه الفرق بين Prediction وCorrect/Incorrect وبين Confidence؟»
+Definition of Done: رسمة تدفق واحدة + أسماء 4 مسؤوليات + نطاق نسخة أولية متفق عليه
+الدليل اللي يتحفظ: صورة المخطط وملف scope.txt
+D1-02 | تنظيم البيئة والمجلدات
+الهدف: أي عضو يقدر يعيد تشغيل الشغل على لابتوب تاني
+مين ينفذ؟ الـAI وUI على لابتوب واحد، التوثيق على الثاني
+الخطوات العملية:
+☐  ثبّتوا Python وتأكدوا من python --version.
+☐  أنشئوا مجلدات: assets/cards، data/cards_train، data/cards_test، data/audio_eval، models، src، results، docs.
+☐  اعملوا venv وشغّلوا pip؛ ثبّتوا opencv-python, numpy, pillow, pytesseract, scikit-learn, sounddevice, soundfile، حسب الحاجة.
+☐  ثبّتوا Tesseract OCR على اللابتوب كبرنامج مستقل، وليس pip فقط؛ اختبروا تشغيله.
+☐  اكتبوا requirements.txt بالنسخ المثبتة وREADME بالأوامر.
+إنت تقول/تسأل إيه؟
+• «ليه بنعزل البيئة بـvenv؟»
+• «ليه pip install pytesseract مش كفاية بدون Tesseract binary؟»
+Definition of Done: كل شخص يقدر يفتح Python ويستورد cv2 وnumpy، والـOCR binary شغال
+الدليل اللي يتحفظ: صورة Terminal + requirements.txt
+لو حصلت مشكلة: لو تثبيت Tesseract تعطل: اشتغلوا بـOpenCV preprocessing وحفظ صور الاختبار واستكملوا باقي الأجزاء حتى يتوفر.
+D1-03 | Dataset كروت الحروف
+الهدف: بناء بيانات حقيقية للتقييم بعيدًا عن صور الضبط
+مين ينفذ؟ عضو Vision وعضو توثيق
+الخطوات العملية:
+☐  صمموا 26 كارت: حرف Uppercase كبير فقط، خلفية بسيطة، نفس المقاس؛ احفظوا الأصول.
+☐  التقطوا عدة صور للكروت بخلفيات ومسافات/زوايا/إضاءة مختلفة، واكتبوا الـLabel الحقيقي.
+☐  افصلوا صور ضبط الإعدادات train/dev عن test؛ لا تستخدموا لقطات متقاربة لنفس الكارت في المجموعتين دون توثيق.
+☐  أنشئوا cards_manifest.csv: filename, label, split, light, distance_cm, notes.
+☐  ابدؤوا A–E ثم أضيفوا بقية الحروف بحسب الوقت.
+إنت تقول/تسأل إيه؟
+• «هو الـGround Truth اتعرف إزاي؟»
+• «لو قسنا الدقة على نفس صور الضبط، فين المشكلة؟»
+Definition of Done: ملف Manifest + صور اختبار حقيقية وموسومة
+الدليل اللي يتحفظ: عدد الصور لكل حرف + 5 صور ناجحة و5 صعبة
+D1-04 | Computer Vision Baseline
+الهدف: التعرف على حرف الكارت من صورة قابلة للتصوير
+مين ينفذ؟ عضو Vision
+الخطوات العملية:
+☐  اقرأ صورة من ملف؛ حولها grayscale؛ طبّق threshold أو adaptive threshold؛ جرّب القص على منطقة الكارت.
+☐  نفّذ OCR بحروف A–Z فقط وبـsingle-character page segmentation مناسب؛ نظّف النتيجة.
+☐  قارِن prediction بـexpected؛ اعرض input, processed, predicted, confidence إن توفر وإلا اكتب «غير متوفر».
+☐  ضع threshold أو حالة UNKNOWN إذا كانت نتيجة OCR فارغة/متعددة/مشكوكًا فيها.
+☐  شغّل batch على صور test واحسب accuracy وconfusion matrix؛ سجل حالات الفشل.
+إنت تقول/تسأل إيه؟
+• «إيه الفرق بين preprocessing وinference؟»
+• «لو الكاميرا رجّعت فراغ، هل نعتبره خطأ أم UNKNOWN؟ وكيف نحسبه؟»
+Definition of Done: Script من command line يقرأ صورة ويرجع حرفًا واحدًا أو UNKNOWN + تقرير دقة
+الدليل اللي يتحفظ: src/card_recognition.py + results/camera_trials.csv
+لو حصلت مشكلة: لو OCR فشل: استخدموا كروت أقوى تباينًا، قص الصورة، إضاءة ثابتة؛ HOG+SVM خيار بديل يحتاج تدريب وتقييم مستقل.
+D1-05 | Speech AI Feasibility — اختبار صعب ومهم
+الهدف: اختيار طريقة واقعية للتعرف على اسم حرف منطوق
+مين ينفذ؟ عضو Audio بقيادتك
+الخطوات العملية:
+☐  ثبتوا تعريف واضح: نريد «اسم الحرف» spoken letter name وليس phoneme في كلمة.
+☐  سجلوا على اللابتوب أمثلة لأسماء A–E من متحدثين بالغين في غرفة هادئة؛ لكل ملف label + speaker_id مجهول + take + noise.
+☐  شغّلوا نموذج Vosk small English أو ASR آخر Offline حسب الجهاز؛ اختبروا الكلمة الناتجة لكل تسجيل.
+☐  طبعًا النموذج قد يرجع كلمات شبيهة (bee, be, B)، اعملوا mapping موثق للحروف، ولا تختاروا mapping بعد رؤية نتائج الـtest.
+☐  اختبروا على تسجيلات جديدة من متحدثين مختلفين؛ احسبوا نسبة correct، وUNKNOWN، والأخطاء الحرجة بين الحروف المتشابهة.
+☐  لو الدقة ضعيفة: اعترفوا بالنتيجة ولا تدعوا أنه phoneme scorer. قرروا تدريب classifier صوتي خاص بالـ26 أسماء حرف باستخدام MFCC+SVM أو embeddings، مع بيانات أكثر وتقسيم speakers مستقل.
+إنت تقول/تسأل إيه؟
+• «هل model بيعرف الصوت اتقال ولا بيقيس جودة النطق؟»
+• «ليه B وD وP خطيرين لو النموذج بيسمع ثانية واحدة بس؟»
+• «لو ما اتعرفش على صوت الطفل، المفروض الجهاز يقول إيه؟»
+Definition of Done: جدول تجارب حقيقي يثبت صلاحية النموذج أو عدم صلاحيته، وقرار مسجل بشأن الحل
+الدليل اللي يتحفظ: data/audio_eval + results/speech_trials.csv + docs/speech_decision.md
+لو حصلت مشكلة: إذا لم يتوفر مايك باليوم الأول: استخدموا مايك اللابتوب/سماعة الهاتف أو تسجيلات متطوعين بالهاتف منقولة للكمبيوتر. لا تعطلوا بقية التاسكات.
+D1-06 | تصميم Logic وواجهة أولية
+الهدف: شاشة واضحة وتدفق قابل للفحص حتى بدون الحساسات
+مين ينفذ؟ عضو UI
+الخطوات العملية:
+☐  ارسموا صفحتين: Home (Learn/Revision)، Learn (A–E + Listen + Record + status)، Revision (Play prompt + Capture + status).
+☐  صمموا أزرارًا كبيرة ولونًا غير مزعج وFeedback صوتي/مرئي؛ Try Again بدون لوم أو تصنيف للطفل.
+☐  اعملوا functions قابلة للفصل: play_letter(letter), recognize_audio(path), recognize_card(image), save_trial(record).
+☐  في أول تجربة، استخدموا ملفات صوت وصور من الكمبيوتر بدل Sensor APIs؛ وصلوا وظائف التعرف بالواجهة.
+☐  اختبروا مسارين: correct وwrong وunknown؛ لا تخفوا خطأ model بالـhard-coding.
+إنت تقول/تسأل إيه؟
+• «لو اختفى الإنترنت هل الـLearn Mode يشتغل؟»
+• «ليه نفصل UI عن AI functions؟»
+Definition of Done: واجهة تعمل على اللابتوب بملفات إدخال وتعرض 3 حالات واضحة
+الدليل اللي يتحفظ: صور الواجهة + src/app.py
+D1-07 | بوابة نهاية اليوم الأول
+الهدف: نقرر هل ننتقل للـPi بنفس الحل أم نحتاج خطة بديلة
+مين ينفذ؟ الجميع
+الخطوات العملية:
+☐  اعملوا Demo سريع: صورة كارت A تعطي A، صورة B تعطي B، والصورة الفارغة UNKNOWN.
+☐  شغّلوا عينات صوت مسجلة؛ اعرضوا predicted وexpected حتى لو في أخطاء.
+☐  اكتبوا أهم 3 مشكلات، مالك كل مشكلة، وإجراء اليوم الثاني.
+☐  انسخوا المشروع وDataset ونتائج الاختبار Backup خارج لابتوب واحد.
+إنت تقول/تسأل إيه؟
+• «ورّوني الدليل مش التوقع».
+• «لو بدلنا Image ملف بكاميرا حية، إيه الوظيفة الوحيدة اللي هتتغير؟»
+Definition of Done: برنامج Demo على لابتوب + قياسات أولية + قائمة مشاكل
+الدليل اللي يتحفظ: results/day1_summary.md + screenshots + backup
+اليوم الثاني — Raspberry Pi 5 + Hardware Integration
+ممنوع نبدأ تعلم نماذج جديدة قبل ما نضمن أن الـOS والشاشة والمايك والكاميرا شغالين. أول ساعتين Hardware Bring-up.
+D2-01 | تشغيل الـPi 5 والشاشة
+الهدف: نظام التشغيل والشاشة Touch بدون مشاكل
+مين ينفذ؟ عضو Hardware
+الخطوات العملية:
+☐  ثبتوا Raspberry Pi OS 64-bit Desktop على microSD باستخدام Raspberry Pi Imager.
+☐  وصلوا مصدر طاقة معتمد 5.1V/5A؛ راجعوا نوع كابل/واجهة الشاشة (HDMI+USB Touch أو DSI).
+☐  تأكدوا من إقلاع الشاشة، وضبط الاتجاه والدقة، وتجربة اللمس في عدة نقاط.
+☐  وصلوا Wi-Fi وحدّثوا النظام عند الحاجة وسجلوا إصدار OS وPython.
+إنت تقول/تسأل إيه؟
+• «مين Controller ومين Display؟»
+• «إيه الضرر من باور غير مستقر؟»
+Definition of Done: Boot + Touch + Wi-Fi ناجحة 3 مرات
+الدليل اللي يتحفظ: صور setup + model of screen + OS version
+لو حصلت مشكلة: لو الشاشة لم تعمل، استخدموا شاشة HDMI احتياطية أولًا للتحقق من إقلاع Pi، ثم اصلحوا الشاشة الأساسية.
+D2-02 | اختبار USB Webcam
+الهدف: صورة Live جاهزة لوضع Revision
+مين ينفذ؟ عضو Hardware + Vision
+الخطوات العملية:
+☐  وصلوا webcam بـUSB، واستعرضوا /dev/video* أو v4l2-ctl --list-devices.
+☐  اختبروا التقاط إطار عبر OpenCV VideoCapture؛ احفظوا صورة.
+☐  حددوا موضع ثابت للكارت بحيث يكون داخل مجال الرؤية، وجرّبوا 3 مسافات.
+☐  اختبروا استدعاء recognize_card(frame) بدل مسار الصورة الثابتة.
+إنت تقول/تسأل إيه؟
+• «مين بيحول الفوتونات لبيانات؟»
+• «ما معنى frame؟»
+Definition of Done: Live capture + Screenshot + نتيجة تعرف على كارت واحد على الأقل
+الدليل اللي يتحفظ: capture.jpg + log التجربة
+لو حصلت مشكلة: لو لا تتفتح: افصلوا برامج الكاميرا الأخرى، جربوا device index مختلف/USB port آخر.
+D2-03 | الصوت: السماعة والمايك
+الهدف: دخل وخرج صوتي مستقلان
+مين ينفذ؟ عضو Hardware + Audio
+الخطوات العملية:
+☐  اعملوا Bluetooth pairing للسماعة، واختبروا تشغيل نطق A–E في الواجهة.
+☐  وصلوا USB microphone وراجعوا أجهزة الإدخال عبر arecord -l وSettings > Sound.
+☐  سجلوا عينة قصيرة واستمعوا لها؛ اختبروا مستوى gain ومسافة 10–20 سم.
+☐  سجلوا أسماء الـaudio devices الصحيحة وأي تأخير في البلوتوث.
+☐  اختبروا TTS بدون الإنترنت، وشغّلوا Audio sample وFeedback.
+إنت تقول/تسأل إيه؟
+• «ليه Input device مختلف عن Output device؟»
+• «هل Bluetooth speaker معناها Bluetooth microphone؟ لأ».
+Definition of Done: صوت مسموع + تسجيل واضح + التعرف على الجهازين بعد Restart
+الدليل اللي يتحفظ: audio_test.wav + قائمة الأجهزة
+لو حصلت مشكلة: لو البلوتوث تأخر أو انقطع: USB/HDMI audio بديل؛ لو المايك لم يصل: نستخدم الملفات المسجلة حتى يتوفر.
+D2-04 | نقل برنامج اليوم الأول
+الهدف: الـAI والواجهة يعملان على Pi وليس فقط على لابتوب
+مين ينفذ؟ AI + UI
+الخطوات العملية:
+☐  انقلوا ملفات المشروع والنماذج وrequirements بدون ملفات raw غير ضرورية.
+☐  على Pi ثبّتوا Python dependencies بنسخ متوافقة مع ARM64/Raspberry Pi OS.
+☐  اختبروا OCR على نفس test image؛ ثم اختبروا Speech model على ملف WAV.
+☐  بدّلوا input_file بـframe من Webcam، والـaudio_file بـrecording من USB microphone.
+☐  اختبروا الواجهة بالتاتش وحددوا نتيجة UNKNOWN في حالة فشل التعرف.
+إنت تقول/تسأل إيه؟
+• «ليه ممكن مكتبة تشتغل على Windows وماتشتغلش على Pi؟»
+• «إيه معنى dependency؟»
+Definition of Done: Learn & Revision يشتغلان على Pi ولو على A–E فقط
+الدليل اللي يتحفظ: فيديو 30–60 ثانية + launch command
+لو حصلت مشكلة: لو model الصوت ثقيل: اختاروا small offline model، قلّلوا طول التسجيل ودقة الصوت مع الحفاظ على الوضوح.
+D2-05 | إنشاء سجل النتائج والـCloud
+الهدف: كل محاولة لها نتيجة قابلة للتحليل والرفع
+مين ينفذ؟ IoT + Docs
+الخطوات العملية:
+☐  اعملوا ملف CSV محلي: timestamp, mode, target, prediction, result, latency_ms, session_id, synced.
+☐  أنشئوا قناة ThingSpeak أو بديلًا Cloud مدعومًا، وأنشئوا API write key لا يُنشر في ملفات عامة.
+☐  أرسلوا أرقامًا مجمعة/غير شخصية، وليس صوت/صور الأطفال؛ احترموا حدود الـrate limit للخدمة.
+☐  إذا انقطع الإنترنت احفظوا محليًا وأعيدوا الرفع لاحقًا؛ اختبروا pending/synced.
+☐  تحققوا من ظهور حدث فعلًا في لوحة Cloud.
+إنت تقول/تسأل إيه؟
+• «إيه الفرق بين Wi‑Fi موجود وIoT مثبت فعليًا؟»
+• «ليه بنخزن local أولًا؟»
+Definition of Done: 3 محاولات محلية + تحديث مؤكد في Cloud
+الدليل اللي يتحفظ: Screenshot Dashboard + CSV مشروح
+لو حصلت مشكلة: لو Cloud تعطل: لا يوقف اللعبة؛ اتركوا بيانات CSV وretry mechanism موثقة.
+D2-06 | بوابة نهاية اليوم الثاني
+الهدف: Demo متكامل على الجهاز
+مين ينفذ؟ الجميع
+الخطوات العملية:
+☐  أعدوا تشغيل Pi دون لابتوب متصل، وافتحوا التطبيق.
+☐  جرّبوا حرف صحيح/خطأ/غير معروف في وضعَي Learn وRevision.
+☐  أثبتوا أن الكاميرا والمايك حقيقيان وليسا محاكاة.
+☐  وثقوا المشاكل المفتوحة وخطة إغلاقها باليوم الثالث.
+إنت تقول/تسأل إيه؟
+• «لو المعرض الآن هل تقدروا تشغلوا الجهاز من غير مساعدتنا؟»
+Definition of Done: جهاز يعمل لمسًا وصوتًا وكاميرا؛ مسار واحد End-to-End
+الدليل اللي يتحفظ: فيديو Demo + day2_summary.md
+اليوم الثالث — Evaluation + Calibration + Final Demonstration
+D3-01 | معايرة الكاميرا والمايك
+الهدف: معرفة ظروف التشغيل المقبولة
+مين ينفذ؟ Testing team
+الخطوات العملية:
+☐  الكاميرا: 3 مسافات مثل 15/25/35 سم، و3 حالات إضاءة؛ سجّلوا success لكل حالة، وثبّتوا مجال التشغيل.
+☐  المايك: 3 مسافات مثل 10/20/30 سم + هدوء/ضوضاء خفيفة؛ لا تغيروا gain أثناء اختبار واحد.
+☐  اكتبوا بيئة الاختبار، عدد المحاولات، النتيجة، وأي تغير في حساسية النموذج.
+إنت تقول/تسأل إيه؟
+• «إيه الفرق بين Calibration وAccuracy evaluation؟»
+Definition of Done: جدول Calibration وظروف موصى بها للجهاز
+الدليل اللي يتحفظ: results/calibration.csv
+D3-02 | اختبارات AI مستقلة
+الهدف: إثبات مستوى أداء النموذج بأرقام حقيقية
+مين ينفذ؟ Testing + AI
+الخطوات العملية:
+☐  جهّزوا 50 تجربة Camera جديدة على الأقل للـA–E (10 لكل حرف) موزعة على الظروف المحددة.
+☐  جهّزوا محاولات Audio مستقلة بعينات جديدة ومن أشخاص غير مستخدمين في تدريب/ضبط النموذج قدر الإمكان.
+☐  كل تجربة تسجل target، prediction، correct، latency، حالة unknown والظروف.
+☐  احسبوا accuracy = correct predictions / all trials؛ UNKNOWN تحتسب غير صحيحة في accuracy الأساسية.
+☐  اعرضوا confusion matrix وأخطاء per-letter؛ لو أقل من 80% لا تكتبوا مستوفٍ، اكتبوا limitations وخطة تحسين.
+إنت تقول/تسأل إيه؟
+• «ليه نحتاج separate test split؟»
+• «لو 42 من 50 صح، الدقة كام؟ 84%. هل كفاية نعمم على جميع الأطفال؟ لا».
+Definition of Done: تقرير لكل نموذج بالدقة والحجم ونوع البيانات والزمن
+الدليل اللي يتحفظ: results/test_camera.csv + test_audio.csv + metrics.md
+D3-03 | Reliability وResponse Time
+الهدف: إثبات إنه شغال كجهاز معرض
+مين ينفذ؟ Testing team
+الخطوات العملية:
+☐  قيسوا بداية المؤقت عند نهاية التسجيل أو التقاط frame؛ نهايته عند ظهور Feedback.
+☐  سجلوا متوسط زمن الاستجابة والـmedian والأسوأ، ووضحوا وقت الصوت غير محسوب إن لم يدخل القياس.
+☐  شغلوا 20 عملية كاملة متتالية مع التنقل بين الوضعين؛ سجلوا crashes/failed attempts.
+☐  جربوا Restart، فقد Wi-Fi، ضغط زر غير صحيح، كارت خارج الكاميرا، صوت صامت.
+إنت تقول/تسأل إيه؟
+• «هل 5 ثواني متوسط يساوي 5 ثواني في كل مرة؟»
+Definition of Done: ملف timings + reliability نسبة نجاح التشغيل
+الدليل اللي يتحفظ: results/reliability.csv + timings.csv
+D3-04 | تحسين تجربة الطفل
+الهدف: واجهة واضحة وتشجيعية بدون ادعاء طبي
+مين ينفذ؟ UI + الجميع
+الخطوات العملية:
+☐  Feedback: Great job عند تعرف مؤكّد، Let’s try again عند عدم التطابق، I could not hear/see عند UNKNOWN.
+☐  أزرار كبيرة، نطق واضح وقابل للتكرار، مستوى صوت قابل للتعديل.
+☐  في Revision لا تعرضوا الحرف قبل اختيار الكارت؛ في Learn اعرضوه بوضوح.
+☐  لا تخزنوا تسجيلات شخصية أو معرفات حساسة على Cloud؛ استخدموا anonymous session IDs.
+إنت تقول/تسأل إيه؟
+• «ازاي نخليها مش لعبة بتعاقب الطفل على ضعف الـAI؟»
+Definition of Done: تصميم واضح ومكتمل السيناريوهات الثلاثة
+الدليل اللي يتحفظ: صور واجهة وحالات correct/wrong/unknown
+D3-05 | تجهيز معرض Capstone
+الهدف: إغلاق الملفات وقابلية التكرار
+مين ينفذ؟ أنت + Documentation
+الخطوات العملية:
+☐  جهزوا Box/Stand ثابت وكروت واضحة وموقع ثابت للكاميرا.
+☐  جهزوا Architecture Diagram, BOM, Dataset description, Calibration, AI rubric, Metrics, Cloud screenshot.
+☐  جهزوا Logbook ورقي لكل عضو طبقًا للتعليمات الرسمية.
+☐  اعملوا Demo نهائي مرتين من cold boot حتى ظهور Cloud event.
+☐  حضّروا فيديو نسخة احتياطية في حال عطل الإنترنت أو قطعة Hardware.
+إنت تقول/تسأل إيه؟
+• «اعملولي Demo من غير ما تلمسوا اللابتوب».
+• «فين الدليل على 80%؟»
+Definition of Done: حزمة عرض متكاملة ومقاسة؛ Known Limitations موثقة
+الدليل اللي يتحفظ: final_demo.mp4 + logbooks + handouts
+سكريبت الشرح — كلام جاهز تقوله للتيم
+افتتاح أول يوم
+«إحنا مش هنبدأ بتركيب Raspberry النهارده، لأن الجهاز مش وصل. هنستغل الوقت في الجزء الأصعب: نحدد الحرف المطلوب ونعرف الـAI بيقدر يتعرف على الكارت أو الصوت بدقة قد إيه. كل Task لازم يطلع منه ملف أو نتيجة، مش مجرد تجربة».
+شرح الـAI للصورة
+«الصورة داخلة Pixels. بنظبط التباين ونقص الكارت، وبعدها الـOCR أو classifier يتوقع الحرف. وبما إن عندنا حرف حقيقي مكتوب في الجدول، نقارن ونحسب Accuracy. لو الصورة مش واضحة، نطلع UNKNOWN بدل ما نخترع حرف».
+شرح الـAI للصوت
+«إحنا بنعلم اسم الحرف، مش بنشخص مخارج الحروف. نموذج تحويل الكلام لنص ممكن يسمع حرف B على إنه كلمة bee. لذلك هنقيس الأداء بنفسنا ولو مش متأكدين هنقول حاول تاني بدل نعتبر الطفل غلط».
+شرح الـIoT
+«الـAI ممكن يشتغل Offline، لكن شرط الـCapstone إن فيه wireless transfer للـCloud. هنرسل نتيجة المحاولة والأداء فقط، مش صوت أو صورة الطفل. لما الإنترنت يقع، اللعبة تفضل شغالة».
+إغلاق أي يوم
+«افتحوا قائمة التاسكات. كل تاسك لازم Proof: صورة، كود، CSV، فيديو، أو Metrics. أي حاجة من غير دليل هتفضل In Progress».
+Rubric لتقييم أداء النموذج
+اختبار جاهز للتنفيذ باليد
+مجلدات التسليم النهائية
+salma_learning/
+  src/                       application, audio, vision, cloud
+  assets/cards/               A–Z printable cards
+  models/                     model assets and version info
+  data/cards_train/           development images
+  data/cards_test/            independent evaluation images
+  data/audio_eval/            adult volunteers, labeled, consented
+  results/                    CSV measurements, metrics, confusion matrix
+  docs/                       architecture, BOM, rubric, calibration, logbook
+  requirements.txt
+  README.md
+أوامر اليوم الأول — على اللابتوب
+Windows (PowerShell):
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install numpy opencv-python pillow pytesseract scikit-learn sounddevice soundfile
+pip freeze > requirements.txt
+Linux / macOS:
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install numpy opencv-python pillow pytesseract scikit-learn sounddevice soundfile
+pip freeze > requirements.txt
+ملاحظة تنفيذية: Tesseract executable يُثبت منفصلًا. نموذج Vosk يُنزَّل منفصلًا أيضًا حسب الـOS. لا نثبت كل المكتبات عشوائيًا على Pi قبل تجربة توافقها.
+توزيع عمل مقترح — قابل للتغيير حسب عدد الأفراد
+Gate نهائي: لا نقول «خلصنا» إلا لو...
+☐  [ ] الـPi يفتح التطبيق ويستجيب للتاتش.
+☐  [ ] السبيكر ينطق الحروف والمايك يلتقط الصوت.
+☐  [ ] الكاميرا ترى كروت حرف واضح وترجع حرف/UNKNOWN.
+☐  [ ] Learn وRevision ينجحان في correct وwrong وunknown.
+☐  [ ] الإرسال للـCloud مثبت بصورة Dashboard، واللعبة تعمل بدون إنترنت.
+☐  [ ] Accuracy وResponse Time موثوقان بنتائج مستقلة (مع إظهار أي فشل في بلوغ المطلوب).
+☐  [ ] Calibration وDataset وRubric وLogbook لكل عضو جاهزة.
+☐  [ ] تشغيل نهائي من Cold Boot ناجح مرتين، ومعروف حدود النسخة A–E مقابل A–Z.
+مراجع وتعليمات مرجعية
+1) G12_27_ Capstone.pdf، الصفحات 1 و4 و5: AI/IoT، بيانات/معيار ML، دقة 80%، المعايرة، القياس، وعدم استخدام Arduino.
+2) ملف «سبب المشروع علشان البشمهندس ميقولش شيكا مش بتشتغل.pdf»: الإطار البحثي الداعم؛ لا يثبت أداء النموذج.
+3) Raspberry Pi Documentation: https://www.raspberrypi.com/documentation/
+4) Vosk model catalogue: https://alphacephei.com/vosk/models
+5) Tesseract OCR: https://tesseract-ocr.github.io/
+6) ThingSpeak: https://thingspeak.mathworks.com/
+
+[TABLE 1]
+المتطلب | الإثبات المطلوب
+AI | نتيجة Camera recognition ونموذج/خدمة Speech recognition، مع توثيق كل منهما
+ICT / IoT / Cloud | حدث مسجل محليًا ويظهر في لوحة Cloud عبر Wi‑Fi
+Accuracy ≥80% | بيانات اختبار منفصلة + مصفوفة أخطاء وحساب Correct/Total؛ لكل نموذج مستخدم
+Response time | زمن بين إتمام التسجيل/التقاط الصورة وإظهار Feedback
+متطلبان إضافيان قابلان للقياس | مثلاً: نجاح محاولات التشغيل وAccuracy الكاميرا تحت إضاءة محددة
+Sensor calibration | مقارنة المايك على مسافات ومستويات ضوضاء، والكاميرا على مسافات وإضاءة
+Dataset + Rubric | ملفات بيانات بأسماء وعلامات Ground Truth ومعايير تقييم
+عرض فعلي | Pi يقلع ويؤدي تسلسلًا كاملًا دون تدخل من لابتوب
+قيود | بدون Arduino؛ حمل الـLogbook؛ توثيق القياسات
+
+[TABLE 2]
+اليوم | الزمن المقترح | المخرجات
+1 — AI على اللابتوب | 5–7 ساعات | Dataset + OCR/Camera baseline + Speech feasibility + واجهة وهمية + ملف تجارب
+2 — Pi5 والتوصيلات | 5–7 ساعات | Pi + Touch + Webcam + Audio/Mic + Backend مربوط بالواجهة
+3 — التقييم والعرض | 5–7 ساعات | قياسات + Cloud + Reliability + Demo + Logbook
+
+[TABLE 3]
+العنصر | التعريف وطريقة التحقق
+Correct | Prediction مطابق للـGround Truth
+Wrong | Prediction حرف مختلف
+Unknown | النموذج رفض/لم يتعرف/صمت أو صورة خارج المجال؛ يدخل ضمن إجمالي المحاولات
+Accuracy | Correct / Total attempts × 100
+Latency | التأخير من نهاية الإدخال إلى ظهور Feedback
+Confusion | تكرار الخطأ في حرف قريب من آخر؛ اعملوا matrix
+Calibration | قياس سلوك الحساس في عدة ظروف ثابتة وكتابة حدود الاستخدام
+Reliability | Successful complete runs / Total end-to-end attempts × 100
+
+[TABLE 4]
+ID | Mode | Expected | Input | Expected system behavior
+T01 | Learn | A | نطق اسم A بوضوح | Recognized A → encouraging feedback
+T02 | Learn | B | نطق اسم D | إذا تعرف على D: wrong/try again
+T03 | Learn | C | صمت | UNKNOWN: I could not hear
+T04 | Revision | A | كارت A واضح | Correct
+T05 | Revision | B | كارت D واضح | Try again
+T06 | Revision | E | لا كارت | UNKNOWN: I could not see
+T07 | Both | — | فصل Wi-Fi | اللعبة تواصل محليًا والرفع ينتظر
+T08 | Both | — | Restart | يرجع التطبيق يعمل بنفس الإعدادات
+
+[TABLE 5]
+الدور | المسؤولية | أهم الملفات
+Leader / System Integrator | متابعة Scope / Interfaces / الدمج / قبول التاسكات | scope, integration, daily summary
+Computer Vision | Dataset صور + OCR + تقييم | card_recognition.py + camera_trials.csv
+Speech AI | تسجيل صوت + اختبار ASR + تقييم | speech_recognition.py + speech_trials.csv
+UI + Hardware | Touch UI + صوت/كاميرا وربط الأجهزة | app.py + hardware checks
