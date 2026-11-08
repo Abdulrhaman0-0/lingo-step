@@ -2,7 +2,7 @@
 
 **Native Python touchscreen application for Raspberry Pi 5**, teaching and reviewing **English letters A–Z**, with an independent **guardian Cloud portal** for reviewing student progress.
 
-> This repository contains the Python-first implementation. The child's application is started with **`python3 main.py`**, not a browser. The old TensorFlow.js web-only prototype is *not* the product architecture.
+> The default `main` branch contains the Python-first implementation. The child's application is started with **`python3 main.py`**, not a browser. The old TensorFlow.js web-only prototype is *not* the product architecture.
 
 ## Screens
 
@@ -19,7 +19,7 @@ Native UI references: six images supplied in the project conversation on 2026-11
 ## Start on Raspberry Pi
 
 ```bash
-git clone -b feature/python-final-ui-cloud git@github.com:Abdulrhaman0-0/lingo-step.git
+git clone git@github.com:Abdulrhaman0-0/lingo-step.git
 cd lingo-step
 bash scripts/setup_pi_native.sh
 .venv/bin/python main.py
@@ -66,4 +66,4 @@ docs/FINAL_DEPLOYMENT.md
 - Test on *actual* Raspberry Pi 5, touchscreen, USB camera, USB microphone, speaker, plus network, before final signoff.
 - Unit tests (not hardware tests): `python -m unittest discover -s tests -v`
 
-See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Deployment runbook](docs/FINAL_DEPLOYMENT.md)** for precise remaining tasks. CI-passing source code is a release candidate; physical hardware and hosted cloud validation remain separate acceptance gates.
+See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Deployment runbook](docs/FINAL_DEPLOYMENT.md)** for precise remaining tasks. This `main` source has passed automated tests but remains a **device/cloud acceptance candidate**, not hardware-certified. Physical hardware and hosted cloud validation remain separate acceptance gates.
