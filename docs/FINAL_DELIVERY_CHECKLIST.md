@@ -15,7 +15,7 @@ User-supplied images in chat on Nov 8: child app — welcome/create child, three
 - [ ] **D08 — Separate parent web portal**: guardian authentication, child-specific dashboard inspired by supplied two web references; letters learned from completed attempts, progression, stars, achievements; no unauthenticated student data access.
 - [x] **D09 — Project structure/docs**: isolate UI / services / adapters / infrastructure / parent portal, hardware setup for Pi 5 Debian Trixie aarch64, executable setup/test instructions, gitpull workflow, no secrets committed.
 - [ ] **D10 — Tests/checks**: unit tests for profiles/data isolation, progress logic, secure sync/auth, and UI headless rendering; run on CI; record untested real hardware/inference.
-- [ ] **D11 — GitHub handoff**: develop safely on feature branch, create PR, preserve main until tested/approved, note every outstanding dependency and step to switch to main.
+- [x] **D11 — GitHub handoff**: develop safely on feature branch, create PR, preserve main until tested/approved, note every outstanding dependency and step to switch to main.
 
 ## Scope / limitations
 - Image AI input supplied as Teachable Machine TFJS `model.json`, `weights.bin`, `metadata.json`; the existing native Python TFLite adapter cannot consume these unchanged. **Converting/exporting a tested TFLite model** (or implementing a verified native runtime) is still required before image inference works in Python. Never rename a TFJS file to `.tflite`.
@@ -34,7 +34,7 @@ User-supplied images in chat on Nov 8: child app — welcome/create child, three
 - `CloudSync` sends only evaluated attempt metadata over HTTPS (localhost HTTP permitted for development) and periodically retries pending records. Authenticated Flask parent portal has guardian account registration, login, pairing, child-specific private dashboard, and idempotent ingestion endpoint.
 - `scripts/setup_pi_native.sh`, `requirements-pi.txt`, cloud WSGI, CI workflow, docs, and new tests are committed.
 - GitHub Actions ran Python 3.11 and Python 3.13 headless/unit suites successfully on the code branch as of this checklist update; verify most recent head run for final status.
-- PR #2: https://github.com/Abdulrhaman0-0/lingo-step/pull/2 (DRAFT — awaiting hardware/model/live cloud QA).
+- PR #2: https://github.com/Abdulrhaman0-0/lingo-step/pull/2 (**MERGED into main** after Python 3.11 and 3.13 CI passed).
 - Outdated web-only PR #1 is CLOSED to avoid accidentally merging the wrong application architecture.
 
 ## What prevents checking every remaining box
@@ -42,6 +42,11 @@ User-supplied images in chat on Nov 8: child app — welcome/create child, three
 2. **D05:** The uploaded TFJS image model is not yet a validated native LiteRT/TFLite model. Camera preview code works without AI, inference is deliberately unavailable until conversion and real tests.
 3. **D07 & D08:** Website/API source and tests exist, but **no external cloud host, domain, TLS certificate, secrets, parent account or end-to-end connection** have been provisioned. Live sync and public release remain pending.
 4. **D10:** CI passes syntax/unit/headless UI tests only. On-device audio, camera, touchscreen and empirical AI accuracy checks require physical Raspberry Pi 5.
-5. **D11:** Merge to main is deferred until the above acceptance testing, to avoid calling an unverified build “final”.
+5. **D11:** Source merged into \`main\` as a code integration candidate; hardware and deployed cloud acceptance remain OPEN. Do not call a child/device or public cloud rollout certified.
 
 Last code-only acceptance update: **2026-11-08**.
+
+## Main branch release candidate audit
+- 2026-11-08: PR #2 merged to main as squash commit `355e5e285c429dc0a636bf9caa7f220eccdb6b5d`; source available via `git pull origin main`.
+- Headless Python tests passed on GitHub CI on Python 3.11 and 3.13 before merge; post-merge CI should also be checked.
+- Image model data and its Python-compatible TFLite conversion, Pi hardware signoff, and live guardian cloud hosting are the remaining external dependencies. The label 'code-integrated' is not equivalent to 'end-to-end complete'.
