@@ -378,6 +378,9 @@ class LingoStepApp:
                                      "جرب تاني — ظهر الحرف "+str(label))
                         self.stop_camera()
                         self._sync_in_background()
+                elif result=="unsupported_letter":
+                    supported="–".join((self.image_model.labels[0],self.image_model.labels[-1]))
+                    self.status="نموذج الكاميرا تجريبي للحروف "+supported+" فقط"
                 elif result=="not_recognized":
                     self.status="ثبّت الكارت أمام الكاميرا"
             self.render()
