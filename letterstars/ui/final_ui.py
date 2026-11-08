@@ -7,6 +7,7 @@ from tkinter import messagebox
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageTk, features
 from ..domain.models import LETTERS
+from ..services.feedback import AnswerFeedback
 
 W, H = 1280, 900
 HAS_RAQM = features.check_feature("raqm")
@@ -205,6 +206,17 @@ class ScreenPainter:
             self.button("next","التالي",(667,763,1035,839),GOLD,"#AF8400",INK,27)
             if camera is not None and not model_ready:
                 self.centered(640,596,"الكاميرا تعمل — موديل الصور غير مثبت",17,CORAL,True)
+        elif page=="pairing":
+            self.logo(640,115,.55)
+            self.panel((170,215,1110,760))
+            self.centered(640,280,"ربط حساب ولي الأمر",34,INK,True)
+            self.centered(640,337,"أدخل الكود التالي في موقع ولي الأمر",25,INK)
+            self.rect((235,382,1045,466),"#E6F4FF",18)
+            self.centered(640,424,pair_code or "",30,TEAL,True,False)
+            self.centered(640,530,"احتفظ بالكود في مكان خاص.",24,INK)
+            self.centered(640,573,"لا تشاركه مع أشخاص غير موثوقين.",24,INK)
+            self.button("copy","نسخ الكود",(245,635,615,710),BLUE,"#216A94","#FFFFFF",25)
+            self.button("close","إغلاق",(665,635,1035,710),GOLD,"#A98319",INK,25)
         elif page=="progress":
             self.header("الملاحظات والإنجازات")
             self.panel((115,170,1150,823))
@@ -233,6 +245,7 @@ class LingoStepApp:
         self.lesson,self.camera,self.image_model,self.store,self.speech=(
             lesson,camera,image_model,progress,speech)
         self.cloud=cloud
+        self.feedback = AnswerFeedback()
         self.root=tk.Tk()
         self.root.title("LingoStep | Capstone Project")
         self.root.geometry("1100x770")
@@ -315,6 +328,7 @@ class LingoStepApp:
         elif action in ("prev","next"):
             index=LETTERS.index(self.lesson.target)
             self.lesson.select(LETTERS[(index+(1 if action=="next" else -1))%26])
+            self.feedback.reset()
             self.status=""
             if self.page=="revision":
                 self.stop_camera()
@@ -338,9 +352,53 @@ class LingoStepApp:
         elif action=="pair":
             info=self.store.current_student()
             if info:
-                messagebox.showinfo("ربط ولي الأمر",
-                    "كود ربط حساب الطفل بموقع ولي الأمر:\n\n"+info["pairing_code"]+
-                    "\n\nاحتفظ بالكود في مكان خاص ولا ترسله لأشخاص غير موثوقين.")
+                self.pairing_dialog(info["pairing_code"])
+
+    def pairing_dialog(self, code):
+        window = tk.Toplevel(self.root)
+        window.title("LingoStep | Parent Account Pairing")
+        window.geometry("800x563")
+        window.minsize(600, 422)
+        window.transient(self.root)
+        window.grab_set()
+        canvas = tk.Canvas(window, bg=IVORY, highlightthickness=0)
+        canvas.pack(fill="both", expand=True)
+        state = {"copied": False}
+
+        def draw(_=None):
+            scale = min(max(1, canvas.winfo_width()) / W,
+                        max(1, canvas.winfo_height()) / H)
+            width, height = max(1, int(W*scale)), max(1, int(H*scale))
+            ox = (canvas.winfo_width()-width)//2
+            oy = (canvas.winfo_height()-height)//2
+            painter = ScreenPainter()
+            im, targets = painter.render("pairing", pair_code=code,
+                status="تم نسخ الكود" if state["copied"] else "")
+            state.update(scale=scale, ox=ox, oy=oy, targets=targets)
+            state["photo"] = ImageTk.PhotoImage(im.resize((width,height),Image.Resampling.LANCZOS))
+            canvas.delete("all")
+            canvas.create_image(ox,oy,image=state["photo"],anchor="nw")
+
+        def click(event):
+            if "scale" not in state:
+                return
+            x=(event.x-state["ox"])/state["scale"]
+            y=(event.y-state["oy"])/state["scale"]
+            for action, bounds in state["targets"]:
+                x1,y1,x2,y2=bounds
+                if x1 <= x <= x2 and y1 <= y <= y2:
+                    if action == "close":
+                        window.destroy()
+                    elif action == "copy":
+                        self.root.clipboard_clear()
+                        self.root.clipboard_append(code)
+                        state["copied"] = True
+                        draw()
+                    break
+
+        canvas.bind("<Configure>", draw)
+        canvas.bind("<Button-1>", click)
+        window.bind("<Escape>", lambda _: window.destroy())
 
     def profile_picker(self):
         profiles=self.store.students()
@@ -365,6 +423,7 @@ class LingoStepApp:
 
     def navigate(self,page):
         self.stop_camera()
+        self.feedback.reset()
         if self.name_entry is not None:
             self.name_entry.destroy()
             self.name_entry=None
@@ -396,9 +455,8 @@ class LingoStepApp:
                 result,label,confidence=self.lesson.check_frame(frame)
                 if result in ("correct","try_again"):
                     if self.lesson.save_image_result(result,label,confidence):
-                        self.status=("ممتاز! إجابة صحيحة" if result=="correct" else
-                                     "جرب تاني — ظهر الحرف "+str(label))
                         self.stop_camera()
+                        self.answer_feedback(result)
                         self._sync_in_background()
                 elif result=="unsupported_letter":
                     supported="–".join((self.image_model.labels[0],self.image_model.labels[-1]))
@@ -427,6 +485,13 @@ class LingoStepApp:
             messagebox.showwarning("Vosk", "التعرف على الصوت غير متاح حاليًا:\n"+
                                    self.speech.error)
             return
+        # Stop prompts before recording so the microphone hears the child.
+        try:
+            self.lesson.voice.stop()
+        except Exception as exc:
+            self.status="تعذر إيقاف الصوت: "+str(exc)[:40]
+            self.render()
+            return
         target=self.lesson.target
         self.mic_busy=True;self.status="اتكلم الآن — بنسجل اسم الحرف"
         self.render()
@@ -449,10 +514,10 @@ class LingoStepApp:
                 else:
                     _,letter,result,pred,transcript=msg
                     if result=="correct":
-                        self.status="أحسنت! تعرّفنا على اسم الحرف "+letter
+                        self.answer_feedback(result)
                         self._sync_in_background()
                     elif result=="try_again":
-                        self.status="جرب تاني — سمعنا: "+(transcript or "?")[:24]
+                        self.answer_feedback(result)
                         self._sync_in_background()
                     else:
                         self.status="ما قدرناش نتعرف على الحرف، حاول تاني"
@@ -460,6 +525,16 @@ class LingoStepApp:
         except queue.Empty:
             pass
         self.root.after(150,self.poll_workers)
+
+    def answer_feedback(self, result):
+        feedback = self.feedback.answer(result)
+        if feedback is None:
+            return
+        key, self.status = feedback
+        try:
+            self.lesson.voice.say_feedback(key)
+        except Exception as exc:
+            self.status += " — تعذر تشغيل الصوت: " + str(exc)[:35]
 
     def _sync_in_background(self):
         if self.cloud and self.cloud.enabled:
@@ -472,6 +547,7 @@ class LingoStepApp:
 
     def close(self):
         self.stop_camera()
+        self.lesson.voice.stop()
         self.root.destroy()
 
     def run(self):
