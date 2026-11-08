@@ -1,7 +1,8 @@
 # Arabic answer feedback
 
-Bundled, AI-generated Arabic recordings created with the AI Voice Generator
-plugin (clear voice). Files are mono PCM16 WAV at 22050 Hz and play offline.
+Bundled Arabic neural speech generated with Microsoft Edge TTS using the
+Egyptian Arabic female voice `ar-EG-SalmaNeural` at rate `-8%`.
+Files are mono PCM16 WAV at 22050 Hz and play offline.
 No voice-generation account or Python decoder is needed on the Raspberry Pi.
 Clips are peak-normalized to 85% without clipping, with 600 ms of lead-in
 silence and 200 ms at the end to reduce lost first syllables on Bluetooth
@@ -10,7 +11,18 @@ misrouted speaker.
 
 - `correct.wav`: ممتاز
 - `retry.wav`: حاول مرة أخرى
-- `retry_again.wav`: محاولة خاطئة، جرب ثانيةً
+- `retry_again.wav`: خطأ، حاول مرة أخرى
+
+Source transcripts (diacritics guide the synthesis; the UI uses normal spelling):
+
+- correct: `مُمْتاز!`
+- retry: `حاوِل مَرَّة أُخرى.`
+- retry_again: `خَطَأ، حاوِل مَرَّة أُخرى.`
+
+Generation is a developer-only task using `edge-tts` and `miniaudio`; neither
+package nor online access is needed for normal Raspberry playback. Update all
+three WAVs together with `letterstars/services/feedback.py` when changing text.
+The voice name is provider metadata and is unrelated to the project branding.
 
 The first evaluated wrong answer uses retry; the second and subsequent wrong
 answers use retry_again. Success, changing letter, selecting a child or opening
