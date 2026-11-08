@@ -85,7 +85,7 @@ def microphone_rate(device=None, preferred=16000):
 
 
 class VoskSpeechClassifier:
-    def __init__(self, model_path, duration=4.0, rate=16000, device=None):
+    def __init__(self, model_path, duration=3.0, rate=16000, device=None):
         self.model_path = Path(model_path)
         self.rate = int(rate)
         selection = device if device is not None else os.getenv("LINGOSTEP_MIC_DEVICE")

@@ -37,6 +37,21 @@ GitHub repository is public: cloning needs no authentication; pushing still requ
 
 ## Parent cloud site
 
+For the school prototype, hosting is optional. Run the child app and the
+simple parent website together on the Raspberry desktop:
+
+```bash
+.venv/bin/python scripts/run_demo.py
+```
+
+Open `http://127.0.0.1:8080` in a browser **on the same Raspberry** (including
+through VNC). Local keys are created once in ignored `data/demo-settings.json`;
+the demo portal database is `data/demo-portal.db`. Create a guardian account,
+complete a real child attempt, then pair using the code in Achievements.
+See [AI handoff and prototype guide](AI_HANDOFF.md) for the full current state.
+
+The following setup is only for a separately hosted website:
+
 ```bash
 python3 -m venv .cloud-venv
 .cloud-venv/bin/pip install -r cloud/requirements.txt

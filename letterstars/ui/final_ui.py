@@ -131,7 +131,7 @@ class ScreenPainter:
         self.targets.append((action,b))
 
     def render(self,page,letter="A",name="",profiles=(),stats=None,recent=(),
-               status="",camera=None,model_ready=False,pair_code=None):
+               status="",camera=None,model_ready=False,pair_code=None,camera_live=False):
         self.decorate()
         stats=stats or dict(correct=0,total=0,try_again=0,learned=0,letters=[])
         if page=="welcome":
@@ -160,6 +160,7 @@ class ScreenPainter:
             else:
                 self.centered(640,802,"رحلتك تبدأ بحرف واحد",18,"#737B89")
         elif page=="home":
+            self.button("logout","تسجيل خروج",(34,28,260,94),"#FFFFFF","#CBD4DA",TEAL,22)
             self.rect((995,30,1250,90),"#FFFFFF",30)
             self.centered(1120,60,"حساب: "+name[:15],19,TEAL,True)
             self.logo(640,205,1.0)
@@ -181,22 +182,26 @@ class ScreenPainter:
             self.button("next","التالي",(665,762,1062,840),GOLD,"#AF8400",INK,27)
         elif page=="revision":
             self.header("المراجعة")
-            self.panel((247,189,1034,620),"#F4F4EF","#E0DDD4",34)
+            self.panel((247,175,1034,516),"#F4F4EF","#E0DDD4",34)
             if camera is not None:
                 im=camera.copy()
-                im.thumbnail((750,388))
-                self.im.paste(im,(640-im.width//2,400-im.height//2))
+                im.thumbnail((750,310))
+                self.im.paste(im,(640-im.width//2,345-im.height//2))
             else:
                 # Draw the camera directly: emoji fonts vary across Pi OS builds.
                 self.rect((568,304,712,396),BLUE,14)
                 self.rect((594,287,638,310),BLUE,7)
                 self.draw_ctx.ellipse((612,322,668,378),fill="#FFFFFF")
                 self.draw_ctx.ellipse((622,332,658,368),fill=BLUE)
-                self.centered(640,504,"افتح الكاميرا",36,INK,True)
-            for x,y,angle in [(280,220,0),(1000,220,1),(280,586,2),(1000,586,3)]:
+                self.centered(640,461,"الكاميرا متوقفة",30,INK,True)
+            for x,y,angle in [(280,205,0),(1000,205,1),(280,487,2),(1000,487,3)]:
                 self.draw_ctx.arc((x-24,y-24,x+24,y+24),angle*90,angle*90+90,
                                   fill="#95C8E6",width=5)
-            self.targets.append(("camera",(247,189,1034,620)))
+            self.button("camera","إيقاف الكاميرا" if camera_live else "تشغيل الكاميرا",
+                        (430,536,850,602),CORAL if camera_live else BLUE,
+                        "#B4472B" if camera_live else "#16648E","#FFFFFF",27)
+            self.centered(640,632,"يوقف عرض البطاقة" if camera_live else
+                          "يعرض البطاقة للتعرف على الحرف",20,"#586B7F")
             self.panel((247,656,1034,736),"#FFFFFF","#F7D3CB",42)
             self.centered(740,695,"الحرف "+letter+" - ارفع البطاقة المناسبة",23,INK,True)
             self.draw_ctx.ellipse((285,668,345,728),fill=CORAL)
@@ -205,7 +210,7 @@ class ScreenPainter:
             self.button("prev","السابق",(247,763,615,839),PALE,"#AE8D1A",INK,25)
             self.button("next","التالي",(667,763,1035,839),GOLD,"#AF8400",INK,27)
             if camera is not None and not model_ready:
-                self.centered(640,596,"الكاميرا تعمل — موديل الصور غير مثبت",17,CORAL,True)
+                self.centered(640,496,"الكاميرا تعمل — موديل الصور غير مثبت",17,CORAL,True)
         elif page=="pairing":
             self.logo(640,115,.55)
             self.panel((170,215,1110,760))
@@ -277,7 +282,7 @@ class LingoStepApp:
         image,self._targets=painter.render(
             self.page,self.lesson.target,self.name,self.store.students(),stats,
             self.store.recent(5) if self.page=="progress" else [],self.status,
-            self.video,self.image_model.ready)
+            self.video,self.image_model.ready,camera_live=self.camera_live)
         self._photo=ImageTk.PhotoImage(image.resize((dw,dh),Image.Resampling.BILINEAR))
         self.canvas.delete("all")
         self.canvas.create_image(ox,oy,image=self._photo,anchor="nw")
@@ -318,6 +323,8 @@ class LingoStepApp:
             self.select(action.partition(":")[2])
         elif action=="all_profiles":
             self.profile_picker()
+        elif action=="logout":
+            self.logout()
         elif action in ("back","home"):
             self.navigate("home" if self.name else "welcome")
         elif action in ("learn","revision","progress"):
@@ -345,6 +352,7 @@ class LingoStepApp:
         elif action=="camera":
             if self.camera_live:
                 self.stop_camera()
+                self.video=None
                 self.status="تم إيقاف الكاميرا"
                 self.render()
             else:
@@ -353,6 +361,18 @@ class LingoStepApp:
             info=self.store.current_student()
             if info:
                 self.pairing_dialog(info["pairing_code"])
+
+    def logout(self):
+        if self.mic_busy:
+            return
+        try:
+            self.lesson.voice.stop()
+        except Exception:
+            pass
+        self.store.deselect_student()
+        self.name=""
+        self.lesson.select("A")
+        self.navigate("welcome")
 
     def pairing_dialog(self, code):
         window = tk.Toplevel(self.root)
@@ -493,7 +513,7 @@ class LingoStepApp:
             self.render()
             return
         target=self.lesson.target
-        self.mic_busy=True;self.status="انطق اسم الحرف بالإنجليزي الآن — التسجيل ٤ ثوانٍ"
+        self.mic_busy=True;self.status="انطق اسم الحرف بالإنجليزي الآن — التسجيل ٣ ثوانٍ"
         self.render()
         def work():
             try:

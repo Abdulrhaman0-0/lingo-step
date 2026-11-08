@@ -71,6 +71,10 @@ class StudentProgressStore(SQLiteProgress):
             return None
         return self.select_student(self.active_student_id)
 
+    def deselect_student(self):
+        """End the local session without deleting any profile or progress."""
+        self.active_student_id = None
+
     def save(self, attempt):
         if not self.active_student_id:
             raise ValueError("Select a student before saving attempts")

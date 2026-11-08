@@ -35,3 +35,22 @@ input:focus{border-color:#66bbf4}.primary{background:linear-gradient(110deg,#ff7
 .pairing{margin-top:25px}.pairing form{display:flex;align-items:end;gap:12px}.pairing form input{flex:1}.pairing button{white-space:nowrap}.empty-state{margin:35px auto;max-width:900px;text-align:center}
 @media(max-width:850px){.dashboard-grid{grid-template-columns:1fr}.gold-summary{min-height:330px}.star-badge{margin:20px 0}.topbar{flex-wrap:wrap}.pairing form{flex-direction:column;align-items:stretch}.letters{grid-template-columns:repeat(9,minmax(0,1fr))}}
 @media(max-width:500px){.account-layout{padding:25px 14px}.account-card{padding:23px 15px}.achievement-grid{grid-template-columns:1fr}.letters{grid-template-columns:repeat(7,minmax(0,1fr))}}
+
+/* School prototype: one clear progress page and one pairing form. */
+.account-card{max-width:560px}.account-layout h1{font-size:32px}
+.field-help{font-size:14px;color:#667487;margin:10px 0}
+.prototype-dashboard{max-width:1000px;border:0;margin:16px auto}
+.child-heading{font-size:25px;margin:22px 0 14px}
+.simple-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;text-align:center}
+.simple-summary strong{display:block;font-size:32px;color:#1264a5;direction:ltr}
+.simple-summary span{display:block;color:#576677}
+.simple-summary .white-panel:nth-child(2){background:#fff0b3}
+.simple-section{margin-top:20px}.simple-section h2{font-size:23px}
+.prototype-dashboard .letters{margin-top:18px}
+.prototype-dashboard .empty-state{margin:25px 0}
+.setup-steps{text-align:right;max-width:630px;margin:20px auto;padding-right:25px}
+.setup-steps li{margin:12px 0}
+.prototype-dashboard summary{cursor:pointer;font-size:21px;font-weight:bold;color:#185f8a}
+.pair-field{flex:1;min-width:0}.prototype-dashboard .pairing form{margin-top:12px}
+.prototype-dashboard .pairing input{min-width:0}
+@media(max-width:600px){.simple-summary{grid-template-columns:1fr}.prototype-dashboard{padding:12px}.topbar{gap:12px}.simple-summary .white-panel{padding:15px}}

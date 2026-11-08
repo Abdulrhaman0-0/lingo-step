@@ -18,7 +18,7 @@ def main():
                         help="Input device name or numeric index")
     parser.add_argument("--list-devices", action="store_true")
     parser.add_argument("--attempts", type=int, default=3)
-    parser.add_argument("--duration", type=float, default=4)
+    parser.add_argument("--duration", type=float, default=3)
     parser.add_argument("--wav", type=Path, help="Test an existing mono PCM16 WAV instead of the microphone")
     args = parser.parse_args()
     if args.attempts < 1 or not 1 <= args.duration <= 15:

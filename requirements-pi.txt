@@ -1,6 +1,6 @@
 # Python 3.13, Raspberry Pi 5 ARM64 (Debian Trixie).
 # OpenCV, NumPy and Pillow are installed from apt and shared via venv.
--r requirements-ui.txt
+-r requirements-demo.txt
 vosk==0.3.45
 sounddevice>=0.5.1,<1
 ai-edge-litert>=1.4,<3
