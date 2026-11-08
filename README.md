@@ -73,3 +73,10 @@ docs/FINAL_DEPLOYMENT.md
 - Unit tests (not hardware tests): `python -m unittest discover -s tests -v`
 
 See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Deployment runbook](docs/FINAL_DEPLOYMENT.md)** for precise remaining tasks. This `main` source has passed automated tests but remains a **device/cloud acceptance candidate**, not hardware-certified. Physical hardware and hosted cloud validation remain separate acceptance gates.
+
+
+## Capstone and Raspberry Pi setup materials
+
+The supplied Capstone source materials and the extracted Smart Alphabet Learning starter files are organized under [docs/capstone](docs/capstone/README.md). This includes the searchable official requirements text, supporting research notes, the three-day execution playbook, starter Python files, and testing CSV templates.
+
+For device setup, use the [safe Raspberry Pi setup template](docs/setup/raspberry_pi_setup.example.txt). **Actual Wi-Fi passwords, Pi login passwords, SSH keys, and cloud/API tokens are intentionally not stored in this public repository.** Keep local values in `raspberry_pi_setup.local.txt` (ignored by Git) or enter them directly in Raspberry Pi Imager.

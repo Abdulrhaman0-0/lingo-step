@@ -1,0 +1,4 @@
+mode,expected,predicted,lighting,noise,notes
+card,A,A,bright,quiet,sample row only - replace with real test
+card,B,,dim,quiet,sample row only - replace with real test
+speech,C,C,bright,quiet,sample row only - manually transcribe true target

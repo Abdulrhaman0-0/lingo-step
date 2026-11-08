@@ -1,0 +1,43 @@
+RASPBERRY PI 5 — SAFE SETUP TEMPLATE
+====================================
+
+DEVICE / OS CUSTOMIZATION
+-------------------------
+Hostname: <SET_ON_DEVICE>
+Username: <SET_ON_DEVICE>
+OS: Raspberry Pi OS (64-bit) Desktop
+WLAN country / regulatory domain: EG (Egypt)
+
+WI-FI
+-----
+Wi-Fi SSID: <SET_LOCALLY>
+Wi-Fi password: <DO_NOT_COMMIT_TO_GITHUB>
+
+REMOTE ACCESS
+-------------
+SSH: Enable during Raspberry Pi Imager setup
+VNC: Enable after first boot if desktop remote access is required
+
+IMPORTANT SECURITY NOTE
+----------------------
+Never commit Wi-Fi passwords, Raspberry Pi login passwords, SSH private
+keys, API tokens, or cloud credentials to this public repository.
+Keep actual credentials in a local-only file such as
+raspberry_pi_setup.local.txt (ignored by Git) or enter them directly
+on the Raspberry Pi Imager device customization screen.
+
+FIRST-BOOT CHECKS
+-----------------
+1. Confirm the hostname: hostnamectl
+2. Confirm the user: whoami
+3. Check network state: nmcli device status
+4. Check Wi-Fi and IP: nmcli -f IN-USE,SSID,SIGNAL,SECURITY device wifi list; hostname -I
+5. Check internet: ping -c 4 1.1.1.1
+6. Check DNS: getent hosts deb.debian.org
+
+NOTES
+-----
+- Use Raspberry Pi OS (64-bit) Desktop for the touchscreen GUI.
+- Keep the Raspberry Pi and laptop on the same local network for SSH/VNC.
+- To change Wi-Fi credentials, update NetworkManager; re-imaging the SD
+  card is not required.
