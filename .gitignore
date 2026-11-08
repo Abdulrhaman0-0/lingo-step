@@ -14,3 +14,6 @@ models/speech/vosk-model-*/
 .DS_Store
 # Team may intentionally commit validated models/image/model.tflite
 # and images via Git LFS, depending on model size and license.
+
+# Local Raspberry Pi credentials must never be committed
+raspberry_pi_setup.local.txt
