@@ -98,6 +98,17 @@ def create_app(config=None):
         conn=g.pop("db",None)
         if conn is not None:conn.close()
 
+    @app.after_request
+    def security_headers(response):
+        response.headers["X-Content-Type-Options"]="nosniff"
+        response.headers["X-Frame-Options"]="DENY"
+        response.headers["Referrer-Policy"]="no-referrer"
+        if request.path.startswith(("/login","/register","/dashboard","/pair","/logout","/api/")):
+            response.headers["Cache-Control"]="no-store"
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"]="max-age=31536000; includeSubDomains"
+        return response
+
     @app.before_request
     def csrf_protection():
         if "_csrf" not in session:
