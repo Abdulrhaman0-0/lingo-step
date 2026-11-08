@@ -2,7 +2,7 @@
 
 **Native Python touchscreen application for Raspberry Pi 5**, teaching and reviewing **English letters A–Z**, with an independent **guardian Cloud portal** for reviewing student progress.
 
-> This branch is the new Python-first implementation. The child's application is started with **`python3 main.py`**, not a browser. The old TensorFlow.js web-only prototype is *not* the product architecture.
+> This repository contains the Python-first implementation. The child's application is started with **`python3 main.py`**, not a browser. The old TensorFlow.js web-only prototype is *not* the product architecture.
 
 ## Screens
 
@@ -66,4 +66,4 @@ docs/FINAL_DEPLOYMENT.md
 - Test on *actual* Raspberry Pi 5, touchscreen, USB camera, USB microphone, speaker, plus network, before final signoff.
 - Unit tests (not hardware tests): `python -m unittest discover -s tests -v`
 
-See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Deployment runbook](docs/FINAL_DEPLOYMENT.md)** for precise remaining tasks. Do not merge until hardware/model/cloud validation.
+See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Deployment runbook](docs/FINAL_DEPLOYMENT.md)** for precise remaining tasks. CI-passing source code is a release candidate; physical hardware and hosted cloud validation remain separate acceptance gates.
