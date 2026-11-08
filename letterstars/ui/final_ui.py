@@ -145,11 +145,11 @@ class ScreenPainter:
             self.rect((995,30,1250,90),"#FFFFFF",30)
             self.centered(1120,60,"حساب: "+name[:15],19,TEAL,True)
             self.logo(640,205,1.0)
-            self.card("progress",(68,465,458,818),GOLD,"#8D700B",
+            self.card("progress",(68,465,438,818),GOLD,"#8D700B",
                       "الملاحظات والإنجازات","نجومك ومستوى تقدمك","★")
-            self.card("revision",(493,465,883,818),CORAL,"#A34327",
+            self.card("revision",(455,465,825,818),CORAL,"#A34327",
                       "المراجعة","تثبيت الحروف","✓")
-            self.card("learn",(918,465,1300,818),BLUE,"#1A6086",
+            self.card("learn",(842,465,1212,818),BLUE,"#1A6086",
                       "التعليم الأساسي","ابدأ المغامرة","A")
         elif page=="learn":
             self.header("★ المستوى ١")
