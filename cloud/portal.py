@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import secrets
 import sqlite3
+from letterstars.domain.pairing import short_pairing_code
 
 from flask import Flask, abort, flash, g, jsonify, redirect, render_template, request, session, url_for
 
@@ -177,11 +178,13 @@ def create_app(config=None):
     @authorized
     def pair():
         code=request.form.get("code","").strip()
-        if not 16<=len(code)<=100:
+        if not 8<=len(code)<=100:
             flash("كود الربط غير صحيح.")
             return redirect(url_for("dashboard"))
-        coded=hmac.new(app.config["SECRET_KEY"].encode(),code.encode(),hashlib.sha256).hexdigest()
-        row=db().execute("SELECT student_id FROM students WHERE pair_hash=?",(coded,)).fetchone()
+        coded=hmac.new(app.config["SECRET_KEY"].encode(),short_pairing_code(code).encode(),hashlib.sha256).hexdigest()
+        legacy=hmac.new(app.config["SECRET_KEY"].encode(),code.encode(),hashlib.sha256).hexdigest()
+        matches=db().execute("SELECT student_id FROM students WHERE pair_hash IN (?,?)",(coded,legacy)).fetchall()
+        row=matches[0] if len(matches)==1 else None
         if row is None:
             flash("كود الربط غير موجود. تأكد من مزامنة الجهاز أولًا.")
         else:
@@ -249,7 +252,7 @@ def create_app(config=None):
             value=item.get("confidence")
             if (not isinstance(sid,str) or not STUDENT_ID.fullmatch(sid) or
                 not isinstance(name,str) or not 1<=len(name)<=60 or
-                not isinstance(code,str) or not 16<=len(code)<=100 or
+                not isinstance(code,str) or not 8<=len(code)<=100 or
                 item.get("mode") not in ("learn","revision") or
                 not isinstance(target,str) or not LETTER.fullmatch(target) or
                 (observed is not None and (not isinstance(observed,str) or
@@ -259,17 +262,24 @@ def create_app(config=None):
                 not isinstance(item.get("id"),str) or not 10<=len(item["id"])<=80 or
                 not isinstance(item.get("timestamp"),str) or not 10<=len(item["timestamp"])<=50):
                 abort(400,"Invalid attempt")
-            encoded=hmac.new(app.config["SECRET_KEY"].encode(),code.encode(),hashlib.sha256).hexdigest()
-            processed.append((item,encoded))
+            encoded=hmac.new(app.config["SECRET_KEY"].encode(),short_pairing_code(code).encode(),hashlib.sha256).hexdigest()
+            legacy=hmac.new(app.config["SECRET_KEY"].encode(),code.encode(),hashlib.sha256).hexdigest()
+            processed.append((item,encoded,legacy))
         accepted=[]
         with db() as conn:
-            for item,encoded in processed:
+            for item,encoded,legacy in processed:
                 old=conn.execute("SELECT pair_hash FROM students WHERE student_id=?",
                                  (item["student_id"],)).fetchone()
-                if old and not hmac.compare_digest(old["pair_hash"],encoded):
+                if old and not (hmac.compare_digest(old["pair_hash"],encoded) or hmac.compare_digest(old["pair_hash"],legacy)):
                     abort(403,"Student pairing credential mismatch")
+                collision=conn.execute("SELECT student_id FROM students WHERE pair_hash=? AND student_id<>?",
+                                       (encoded,item["student_id"])).fetchone()
+                if collision:
+                    abort(409,"Pairing code collision; keep the existing child's pairing credential")
                 conn.execute("INSERT OR IGNORE INTO students VALUES(?,?,?)",
                              (item["student_id"],item["student_name"],encoded))
+                if old:
+                    conn.execute("UPDATE students SET pair_hash=? WHERE student_id=?",(encoded,item["student_id"]))
                 existing=conn.execute("SELECT student_id FROM attempts WHERE attempt_uuid=?",
                                       (item["id"],)).fetchone()
                 if existing and existing["student_id"]!=item["student_id"]:

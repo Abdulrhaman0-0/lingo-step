@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 import tempfile
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from letterstars.ui.final_ui import ScreenPainter
 from letterstars.ui.final_ui import LingoStepApp
 from letterstars.domain.models import Attempt
@@ -11,6 +11,31 @@ from letterstars.infrastructure.student_progress import StudentProgressStore
 
 
 class FinalUIRenderTests(unittest.TestCase):
+    def test_name_input_keeps_widget_and_focus_when_screen_redraws(self):
+        app=LingoStepApp.__new__(LingoStepApp)
+        app.page, app.name, app.status = "welcome", "", ""
+        app.video, app.camera_live = None, False
+        app.name_entry, app._entry_window = None, None
+        app.root, app.canvas, app.lesson, app.store, app.image_model = [Mock() for _ in range(5)]
+        app.canvas.winfo_width.return_value = 1100
+        app.canvas.winfo_height.return_value = 770
+        app.canvas.create_window.return_value = 42
+        app.store.students.return_value = []
+        app.lesson.target = "A"
+        app.image_model.ready = False
+        with patch("letterstars.ui.final_ui.tk.Entry") as entry, \
+             patch("letterstars.ui.final_ui.ImageTk.PhotoImage"):
+            entry.return_value.get.return_value = "Sara"
+            app.render()
+            app.render()
+            app.focus_name_entry()
+            entry.assert_called_once()
+            app.canvas.create_window.assert_called_once()
+            entry.return_value.destroy.assert_not_called()
+            entry.return_value.focus_set.assert_called_once()
+            self.assertEqual(app.name_entry.get(), "Sara")
+            self.assertNotIn(("all",), [call.args for call in app.canvas.delete.call_args_list])
+
     def test_all_native_screens_draw_offline(self):
         for screen in ("welcome","home","learn","revision","progress","pairing"):
             with self.subTest(screen=screen):

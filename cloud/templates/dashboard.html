@@ -62,7 +62,7 @@
     <form method="post" action="{{url_for('pair')}}">
       <input type="hidden" name="csrf" value="{{csrf_token()}}">
       <div class="pair-field"><label for="code">كود الربط من التطبيق</label>
-        <input name="code" id="code" minlength="16" maxlength="100" required dir="ltr" autocomplete="off" placeholder="الصق الكود هنا">
+        <input name="code" id="code" minlength="8" maxlength="100" required dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="كود الطفل (8 خانات)">
       </div>
       <button type="submit" class="primary">ربط الطفل</button>
     </form>

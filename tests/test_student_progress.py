@@ -1,11 +1,28 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from letterstars.domain.models import Attempt
 from letterstars.infrastructure.student_progress import StudentProgressStore
 
 
 class StudentProgressTests(unittest.TestCase):
+    def test_short_codes_retry_collisions_and_pairing_resync_preserves_progress(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store=StudentProgressStore(Path(tmp)/"progress.db")
+            with patch("letterstars.infrastructure.student_progress.new_pairing_code", side_effect=["ABCDEFGH","ABCDEFGH","JKLMNPQR"]):
+                first=store.create_student("First")
+                store.create_student("Second")
+            self.assertEqual(store.current_student()["pairing_code"], "JKLMNPQR")
+            store.select_student(first)
+            store.save(Attempt.make("learn","A","A",.95,"correct"))
+            event_id=store.pending_sync()[0]["id"]
+            store.mark_synced([event_id])
+            self.assertEqual(store.pending_sync(), [])
+            store.requeue_pairing()
+            self.assertEqual(store.pending_sync()[0]["id"], event_id)
+            self.assertEqual(store.summary()["correct"], 1)
+
     def test_profiles_isolate_attempts_and_offline_outbox(self):
         with tempfile.TemporaryDirectory() as tmp:
             db=StudentProgressStore(Path(tmp)/"progress.db")

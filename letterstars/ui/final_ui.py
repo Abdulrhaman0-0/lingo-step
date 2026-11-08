@@ -8,6 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageTk, features
 from ..domain.models import LETTERS
 from ..services.feedback import AnswerFeedback
+from ..domain.pairing import short_pairing_code
 
 W, H = 1280, 900
 HAS_RAQM = features.check_feature("raqm")
@@ -217,7 +218,7 @@ class ScreenPainter:
             self.centered(640,280,"ربط حساب ولي الأمر",34,INK,True)
             self.centered(640,337,"أدخل الكود التالي في موقع ولي الأمر",25,INK)
             self.rect((235,382,1045,466),"#E6F4FF",18)
-            self.centered(640,424,pair_code or "",30,TEAL,True,False)
+            self.centered(640,424,pair_code or "",50 if len(pair_code or "")<=8 else 30,TEAL,True,False)
             self.centered(640,530,"احتفظ بالكود في مكان خاص.",24,INK)
             self.centered(640,573,"لا تشاركه مع أشخاص غير موثوقين.",24,INK)
             self.button("copy","نسخ الكود",(245,635,615,710),BLUE,"#216A94","#FFFFFF",25)
@@ -265,6 +266,7 @@ class LingoStepApp:
         self.root.protocol("WM_DELETE_WINDOW",self.close)
         self.page="welcome";self.name="";self.status="";self.video=None
         self.camera_live=False;self.mic_busy=False;self.name_entry=None
+        self._entry_window=None
         self._photo=None;self._targets=[];self._thread_messages=queue.Queue()
         self.root.attributes("-fullscreen",True)
         self.render();self.root.after(150,self.poll_workers)
@@ -284,16 +286,27 @@ class LingoStepApp:
             self.store.recent(5) if self.page=="progress" else [],self.status,
             self.video,self.image_model.ready,camera_live=self.camera_live)
         self._photo=ImageTk.PhotoImage(image.resize((dw,dh),Image.Resampling.BILINEAR))
-        self.canvas.delete("all")
-        self.canvas.create_image(ox,oy,image=self._photo,anchor="nw")
+        # Keep the native input widget and its canvas item alive while resizing.
+        # Recreating all items can drop keyboard/touch focus on the Pi.
+        self.canvas.delete("scene")
+        self.canvas.create_image(ox,oy,image=self._photo,anchor="nw",tags="scene")
+        self.canvas.tag_lower("scene")
         if self.page=="welcome":
             if self.name_entry is None:
-                self.name_entry=tk.Entry(self.root,justify="center",font=("Arial",18),
-                                         relief="flat")
-            self.canvas.create_window(ox+641*scale,oy+592*scale,window=self.name_entry,
-                                      width=max(220,int(865*scale)),
+                self.name_entry=tk.Entry(self.canvas,justify="center",font=("Arial",18),
+                                         relief="flat",bg="#FFFFFF",fg=INK,insertbackground=INK)
+                self.name_entry.bind("<Return>",lambda _:self.action("create"))
+                self.name_entry.bind("<Button-1>",lambda _:self.focus_name_entry(),add="+")
+                self.root.after_idle(self.focus_name_entry)
+            if self._entry_window is None:
+                self._entry_window=self.canvas.create_window(0,0,window=self.name_entry)
+            self.canvas.coords(self._entry_window,ox+641*scale,oy+592*scale)
+            self.canvas.itemconfigure(self._entry_window,width=max(220,int(865*scale)),
                                       height=max(32,int(44*scale)))
-            self.name_entry.bind("<Return>",lambda _:self.action("create"))
+
+    def focus_name_entry(self):
+        if self.page=="welcome" and self.name_entry is not None and self.name_entry.winfo_exists():
+            self.name_entry.focus_set()
 
     def on_click(self,event):
         if self.mic_busy:
@@ -360,7 +373,9 @@ class LingoStepApp:
         elif action=="pair":
             info=self.store.current_student()
             if info:
-                self.pairing_dialog(info["pairing_code"])
+                self.store.requeue_pairing()
+                self._sync_in_background()
+                self.pairing_dialog(short_pairing_code(info["pairing_code"]))
 
     def logout(self):
         if self.mic_busy:
@@ -452,6 +467,8 @@ class LingoStepApp:
         if self.name_entry is not None:
             self.name_entry.destroy()
             self.name_entry=None
+            self.canvas.delete(self._entry_window)
+            self._entry_window=None
         self.page=page;self.video=None;self.status=""
         self.render()
 

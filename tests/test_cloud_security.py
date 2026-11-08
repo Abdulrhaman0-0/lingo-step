@@ -64,6 +64,47 @@ class ParentCloudTests(unittest.TestCase):
                            headers={"Authorization":"Bearer "+self.token})
         self.assertEqual(r.status_code,400)
 
+    def test_old_record_upgrades_to_short_code_without_losing_link_or_double_counting(self):
+        import hashlib, hmac
+        from contextlib import closing
+        from cloud.portal import connect
+        old_code="AbCdE9_x-long-legacy-secret"
+        event={"id":"short-code-attempt-1","student_id":"short-code-child",
+               "student_name":"Short Code Child","pairing_code":old_code,
+               "mode":"learn","target":"B","observed":"B","confidence":.95,
+               "result":"correct","timestamp":"2026-11-09T12:00:00Z"}
+        old_hash=hmac.new(self.app.config["SECRET_KEY"].encode(),old_code.encode(),hashlib.sha256).hexdigest()
+        with closing(connect(self.app.config["DB_PATH"])) as db:
+            with db:
+                db.execute("INSERT INTO students VALUES(?,?,?)",(event["student_id"],event["student_name"],old_hash))
+        self.post_form("/register",{"username":"short_parent","password":"strong-passphrase-123"})
+        self.post_form("/login",{"username":"short_parent","password":"strong-passphrase-123"})
+        self.post_form("/pair",{"code":old_code})
+        headers={"Authorization":"Bearer "+self.token}
+        for _ in range(2):
+            response=self.client.post("/api/v1/attempts",json={"events":[event]},headers=headers)
+            self.assertEqual(response.status_code,200,response.data)
+        dashboard=self.client.get("/dashboard").get_data(as_text=True)
+        self.assertIn("Short Code Child",dashboard)
+        self.assertIn("1 / 26",dashboard)
+        other=self.app.test_client()
+        self.post_form("/register",{"username":"second_short_parent","password":"strong-passphrase-456"},other)
+        self.post_form("/login",{"username":"second_short_parent","password":"strong-passphrase-456"},other)
+        self.post_form("/pair",{"code":"abcde9_x"},other)
+        self.assertIn("Short Code Child",other.get("/dashboard").get_data(as_text=True))
+
+    def test_new_eight_character_code_is_accepted_and_shorter_code_rejected(self):
+        event={"id":"new-short-code-123","student_id":"new-short-child",
+               "student_name":"New Short Child","pairing_code":"ABCD2345",
+               "mode":"learn","target":"A","observed":"A","confidence":.95,
+               "result":"correct","timestamp":"2026-11-09T12:00:00Z"}
+        headers={"Authorization":"Bearer "+self.token}
+        response=self.client.post("/api/v1/attempts",json={"events":[event]},headers=headers)
+        self.assertEqual(response.status_code,200)
+        event["pairing_code"]="ABCD234"
+        response=self.client.post("/api/v1/attempts",json={"events":[event]},headers=headers)
+        self.assertEqual(response.status_code,400)
+
 
 if __name__=="__main__":
     unittest.main()

@@ -5,6 +5,7 @@ import secrets
 import sqlite3
 import uuid
 from .storage import SQLiteProgress
+from ..domain.pairing import new_pairing_code
 
 
 class StudentProgressStore(SQLiteProgress):
@@ -45,8 +46,12 @@ class StudentProgressStore(SQLiteProgress):
         if any(ord(c) < 32 for c in name):
             raise ValueError("Invalid student name")
         student_id = str(uuid.uuid4())
-        pair = secrets.token_urlsafe(18)
         with self._connect() as db:
+            # Retry a random-code collision without changing existing profiles.
+            while True:
+                pair = new_pairing_code()
+                if not db.execute("SELECT 1 FROM students WHERE UPPER(SUBSTR(pairing_code,1,8))=?", (pair,)).fetchone():
+                    break
             db.execute("INSERT INTO students VALUES(?,?,?,?)",
                        (student_id, name, pair, datetime.now(timezone.utc).isoformat()))
         self.active_student_id = student_id
@@ -74,6 +79,13 @@ class StudentProgressStore(SQLiteProgress):
     def deselect_student(self):
         """End the local session without deleting any profile or progress."""
         self.active_student_id = None
+
+    def requeue_pairing(self):
+        """Resend one real attempt so an older web record learns the short code."""
+        if self.active_student_id:
+            with self._connect() as db:
+                db.execute("""UPDATE attempts SET synced_at=NULL WHERE id=(
+                    SELECT MAX(id) FROM attempts WHERE student_id=?)""", (self.active_student_id,))
 
     def save(self, attempt):
         if not self.active_student_id:
