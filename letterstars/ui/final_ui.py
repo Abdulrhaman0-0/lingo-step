@@ -493,7 +493,7 @@ class LingoStepApp:
             self.render()
             return
         target=self.lesson.target
-        self.mic_busy=True;self.status="اتكلم الآن — بنسجل اسم الحرف"
+        self.mic_busy=True;self.status="انطق اسم الحرف بالإنجليزي الآن — التسجيل ٤ ثوانٍ"
         self.render()
         def work():
             try:
@@ -519,8 +519,12 @@ class LingoStepApp:
                     elif result=="try_again":
                         self.answer_feedback(result)
                         self._sync_in_background()
+                    elif self.speech.last_issue == "quiet":
+                        self.status="صوت الميكروفون ضعيف جدًا — قرّب الميكروفون وتأكد من اختياره"
+                    elif transcript:
+                        self.status="سمعنا: "+transcript[:24]+" — انطق اسم حرف واحد بالإنجليزي"
                     else:
-                        self.status="ما قدرناش نتعرف على الحرف، حاول تاني"
+                        self.status="وصل صوت لكن لم نتعرف على حرف — حاول مرة أخرى"
                 self.render()
         except queue.Empty:
             pass

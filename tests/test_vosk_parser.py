@@ -18,6 +18,13 @@ class VoskParserTests(unittest.TestCase):
             else:
                 self.assertIsNone(pred)
 
+    def test_repeated_same_letter_allowed_but_unknown_and_mixed_rejected(self):
+        pred, _ = parse_vosk_result({"text": "bee be", "result": [{"conf": .9}, {"conf": .8}]})
+        self.assertEqual(pred.label, "B")
+        for text in ("bee dee", "[unk]", "this is a sentence"):
+            pred, _ = parse_vosk_result({"text": text, "result": [{"conf": .99}]})
+            self.assertIsNone(pred)
+
 
 if __name__=="__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 """SQLite repository, stored locally, no AI or GUI dependencies."""
 import sqlite3
 from pathlib import Path
+from contextlib import contextmanager
 
 class SQLiteProgress:
     def __init__(self, path):
@@ -13,7 +14,14 @@ class SQLiteProgress:
                 confidence REAL, result TEXT NOT NULL, timestamp TEXT NOT NULL
             )""")
 
-    def _connect(self): return sqlite3.connect(str(self.path))
+    @contextmanager
+    def _connect(self):
+        db = sqlite3.connect(str(self.path))
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def save(self,a):
         with self._connect() as db:

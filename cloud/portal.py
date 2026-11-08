@@ -5,6 +5,7 @@ Deploy behind HTTPS reverse proxy; do not expose localhost dev server publicly.
 """
 from datetime import datetime, timezone
 from functools import wraps
+from contextlib import closing
 import hashlib
 import hmac
 import os
@@ -48,7 +49,7 @@ def connect(path):
 
 def initialize(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with connect(path) as db:
+    with closing(connect(path)) as db:
         db.executescript("""
           CREATE TABLE IF NOT EXISTS guardians (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

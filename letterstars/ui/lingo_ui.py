@@ -5,15 +5,11 @@ from tkinter import messagebox
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 from ..domain.models import LETTERS
+from .final_ui import HAS_RAQM, font
 
 BG='#FCF9F2'; INK='#263347'; BLUE='#45A7F5'; RED='#FF7048'; GOLD='#FFC420'
 def ft(n,b=False,ar=True):
-    names=(['NotoSansArabic-Bold.ttf','arialbd.ttf','DejaVuSans-Bold.ttf'] if b else ['NotoSansArabic-Regular.ttf','arial.ttf','DejaVuSans.ttf']) if ar else (['DejaVuSans-Bold.ttf','arialbd.ttf'] if b else ['DejaVuSans.ttf','arial.ttf'])
-    for directory in ('/usr/share/fonts/truetype/noto','/usr/share/fonts/truetype/dejavu','C:/Windows/Fonts'):
-        for name in names:
-            p=Path(directory)/name
-            if p.exists():return ImageFont.truetype(str(p),n)
-    return ImageFont.load_default()
+    return font(n,b,ar)
 
 class Painter:
     def __init__(self):
@@ -21,7 +17,14 @@ class Painter:
     def rect(self,b,c,r=0,outline=None):
         self.d.rounded_rectangle(tuple(map(int,b)),radius=r,fill=c,outline=outline,width=2)
     def text(self,x,y,s,n=27,c=INK,b=False,ar=True):
-        self.d.text((x,y),s,font=ft(n,b,ar),fill=c,anchor='mm',direction='rtl' if ar else 'ltr')
+        options = {}
+        if HAS_RAQM:
+            options['direction'] = 'rtl' if ar else 'ltr'
+        elif ar:
+            import arabic_reshaper
+            from bidi.algorithm import get_display
+            s = get_display(arabic_reshaper.reshape(s))
+        self.d.text((x,y),s,font=ft(n,b,ar),fill=c,anchor='mm',**options)
     def star(self,x,y,r=16,c=GOLD):
         pts=[]
         for i in range(10):

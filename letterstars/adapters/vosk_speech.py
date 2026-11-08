@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import re
+from array import array
+import math
 from ..domain.models import Prediction
 
 LETTER_WORDS = {
@@ -38,6 +40,14 @@ LETTER_WORDS = {
     "z": "Z", "zee": "Z", "zed": "Z",
 }
 
+# One spelling per pronunciation avoids splitting Vosk's word confidence over
+# homophones (e.g. bee/be/b). Both distinct Z pronunciations are supported.
+LETTER_GRAMMAR = [
+    "a", "bee", "see", "dee", "e", "eff", "gee", "h", "eye", "jay",
+    "kay", "el", "em", "n", "oh", "pee", "queue", "are", "ess", "tee",
+    "you", "vee", "double you", "ex", "why", "zee", "zed", "[unk]",
+]
+
 
 def parse_vosk_result(result):
     """Use word recognition evidence. Unknown and ambiguous transcripts return None."""
@@ -46,6 +56,11 @@ def parse_vosk_result(result):
     if not transcript:
         return None, transcript
     label = LETTER_WORDS.get(transcript)
+    if label is None:
+        # Repeating the same letter is fine; mixed letters remain ambiguous.
+        repeated = [LETTER_WORDS.get(word) for word in transcript.split()]
+        if repeated and None not in repeated and len(set(repeated)) == 1:
+            label = repeated[0]
     words = result.get("result", [])
     if label is None or not words:
         return None, transcript
@@ -70,7 +85,7 @@ def microphone_rate(device=None, preferred=16000):
 
 
 class VoskSpeechClassifier:
-    def __init__(self, model_path, duration=2.5, rate=16000, device=None):
+    def __init__(self, model_path, duration=4.0, rate=16000, device=None):
         self.model_path = Path(model_path)
         self.rate = int(rate)
         selection = device if device is not None else os.getenv("LINGOSTEP_MIC_DEVICE")
@@ -82,6 +97,11 @@ class VoskSpeechClassifier:
         self.ready = False
         self.error = ""
         self.last_transcript = ""
+        self.last_audio_rms = 0.0
+        self.last_audio_peak = 0
+        self.last_sample_rate = self.rate
+        self.last_device_name = ""
+        self.last_issue = ""
         try:
             if not self.model_path.is_dir():
                 raise FileNotFoundError("Vosk language model not installed")
@@ -98,9 +118,12 @@ class VoskSpeechClassifier:
         import sounddevice as sd
         from vosk import KaldiRecognizer
         rate = self.rate
+        self.last_transcript = ""
+        self.last_issue = ""
         # Tk UI calls this in a worker: capture must never freeze mainloop.
         if audio is None:
             rate = microphone_rate(self.device, self.rate)
+            self.last_device_name = sd.query_devices(self.device, "input")["name"]
             data = sd.rec(int(self.duration*rate), samplerate=rate,
                           channels=1, dtype="int16", device=self.device)
             sd.wait()
@@ -109,10 +132,24 @@ class VoskSpeechClassifier:
             pcm = audio
         else:
             raise ValueError("Expected PCM16 bytes or microphone recording")
-        # Tell Vosk the actual PCM rate, including 44.1/48 kHz USB recordings.
-        rec = KaldiRecognizer(self.model, rate)
+        samples = array("h")
+        samples.frombytes(pcm)
+        self.last_sample_rate = rate
+        self.last_audio_peak = max((abs(x) for x in samples), default=0)
+        self.last_audio_rms = math.sqrt(sum(x*x for x in samples)/len(samples)) if samples else 0.0
+        # All letters are candidates, never only the expected target. [unk]
+        # allows unrelated speech to be rejected instead of forced into a letter.
+        grammar = json.dumps(LETTER_GRAMMAR)
+        rec = KaldiRecognizer(self.model, rate, grammar)
         rec.SetWords(True)
-        rec.AcceptWaveform(pcm)
-        result = json.loads(rec.FinalResult())
+        results = []
+        for start in range(0, len(pcm), 8000):
+            if rec.AcceptWaveform(pcm[start:start+8000]):
+                results.append(json.loads(rec.Result()))
+        results.append(json.loads(rec.FinalResult()))
+        result = {"text": " ".join(r.get("text", "") for r in results).strip(),
+                  "result": [word for r in results for word in r.get("result", [])]}
         prediction, self.last_transcript = parse_vosk_result(result)
+        if prediction is None:
+            self.last_issue = "quiet" if self.last_audio_rms < 30 else "unrecognized"
         return prediction
