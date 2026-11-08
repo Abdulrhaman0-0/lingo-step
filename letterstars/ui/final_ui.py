@@ -128,9 +128,12 @@ class ScreenPainter:
             self.button("create","🚀 إنشاء حساب وابدأ التعلم",
                         (160,664,1120,735),PINK,"#C7555A","#FFFFFF",27)
             # Existing children are rendered as independently selectable profiles.
-            if profiles:
+            if len(profiles)>4:
+                self.button("all_profiles","اختر من الحسابات المحفوظة",
+                            (285,781,995,845),"#DDEEFF","#92B7D0",TEAL,19)
+            elif profiles:
                 self.centered(1026,765,"الحسابات المحفوظة",20,INK,True)
-                for i,p in enumerate(profiles[:4]):
+                for i,p in enumerate(profiles):
                     x1=160+(i%4)*240
                     b=(x1,795,x1+219,846)
                     self.rect(b,"#E6F4FF",16)
@@ -225,6 +228,7 @@ class LingoStepApp:
         self._photo=None;self._targets=[];self._thread_messages=queue.Queue()
         self.root.attributes("-fullscreen",True)
         self.render();self.root.after(150,self.poll_workers)
+        self.root.after(30_000,self.periodic_sync)
 
     def render(self):
         width=max(2,self.canvas.winfo_width())
@@ -277,6 +281,8 @@ class LingoStepApp:
                 messagebox.showwarning("اسم الطفل",str(exc))
         elif action.startswith("profile:"):
             self.select(action.partition(":")[2])
+        elif action=="all_profiles":
+            self.profile_picker()
         elif action in ("back","home"):
             self.navigate("home" if self.name else "welcome")
         elif action in ("learn","revision","progress"):
@@ -313,6 +319,27 @@ class LingoStepApp:
                 messagebox.showinfo("ربط ولي الأمر",
                     "كود ربط حساب الطفل بموقع ولي الأمر:\n\n"+info["pairing_code"]+
                     "\n\nاحتفظ بالكود في مكان خاص ولا ترسله لأشخاص غير موثوقين.")
+
+    def profile_picker(self):
+        profiles=self.store.students()
+        window=tk.Toplevel(self.root)
+        window.title("اختيار الطفل")
+        window.geometry("520x450")
+        window.transient(self.root)
+        window.grab_set()
+        tk.Label(window,text="اختار حساب الطفل",font=("Arial",22,"bold")).pack(pady=14)
+        listing=tk.Listbox(window,font=("Arial",18),height=10,justify="right")
+        for profile in profiles:
+            listing.insert("end",profile["name"])
+        listing.pack(fill="both",expand=True,padx=18)
+        def choose(_=None):
+            selected=listing.curselection()
+            if selected:
+                child_id=profiles[selected[0]]["id"]
+                window.destroy()
+                self.select(child_id)
+        listing.bind("<Double-Button-1>",choose)
+        tk.Button(window,text="متابعة",font=("Arial",19),command=choose).pack(pady=14)
 
     def navigate(self,page):
         self.stop_camera()
@@ -412,6 +439,11 @@ class LingoStepApp:
     def _sync_in_background(self):
         if self.cloud and self.cloud.enabled:
             threading.Thread(target=self.cloud.sync_once,daemon=True).start()
+
+    def periodic_sync(self):
+        # Retry unsynced events even when no new lesson occurs after reconnect.
+        self._sync_in_background()
+        self.root.after(30_000,self.periodic_sync)
 
     def close(self):
         self.stop_camera()
