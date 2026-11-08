@@ -19,15 +19,15 @@ Native UI references: six images supplied in the project conversation on 2026-11
 ## Start on Raspberry Pi
 
 ```bash
-git clone git@github.com:Abdulrhaman0-0/lingo-step.git
+git clone https://github.com/Abdulrhaman0-0/lingo-step.git
 cd lingo-step
 bash scripts/setup_pi_native.sh
 .venv/bin/python main.py
 ```
 
-Private GitHub repo requires an authorized SSH key. `python3 main.py` also works once Python's dependencies are available in the active environment.
+GitHub repository is public: cloning needs no authentication; pushing still requires write access. `python3 main.py` also works once Python's dependencies are available in the active environment.
 
-**AI assets not yet supplied in Python-native format:** Vosk language model downloads during Pi setup, while camera's actual trained Teachable Machine TFJS model must be converted and validated as `models/image/model.tflite` + `config.json`. Without it, camera preview still works but inference is disabled explicitly.
+**Current image-model demo:** The team supplied a five-class A–E TensorFlow Lite export. Its config/labels and partial-class safeguards are in the repository, but the 2 MB `model.tflite` binary must still be uploaded once to `models/image/` through GitHub. Until then camera preview works but image inference remains unavailable. A full A–Z model is still required for final delivery. Vosk English model downloads during Pi setup. See [A–E laptop test steps](docs/AE_MODEL_DESKTOP_TEST.md).
 
 ## Parent cloud site
 
