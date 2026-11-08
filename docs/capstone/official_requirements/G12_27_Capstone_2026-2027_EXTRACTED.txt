@@ -1,0 +1,132 @@
+    ‫ن‬
+    ‫والموهوبي‬ ‫ن‬
+              ‫المتفوقي‬ ‫الوحدة المركزية لمدارس‬
+Central Unit for Gifted and Talented Students
+
+                               Capstone Challenge
+                                     2026-2027
+                               Grade 12 Semester 1
+   Challenge Title: Information Technology and Artificial Intelligence (AI)
+                                   Applications
+
+
+Theme: Communication, Sensing, Information, Informatics
+
+Egypt Grand Challenges
+   ● Increase the industrial and agricultural base of Egypt.
+   ● Public health issues and diseases.
+   ● Improve the scientific and technological environment.
+Capstone Big Idea:
+
+Integrating AI-driven edge computing with the Internet of Things (IoT) for next-
+generation industrial automation, educational robotics, or assistive medical
+technologies is the main objective of this year's challenge. Students must design a
+system that analyzes the current situation—including the necessary sensing,
+measurements, and communication with information/data sources—to formulate
+AI-driven solutions and intelligent techniques aimed at expanding the industrial
+base, delivering medical services, or enhancing the learning environment. The
+proposed solution/prototype must include sensing, wireless data transfer to the
+cloud, advanced communication tools, and AI platforms.
+
+Essential Question: How can integrating AI tools with information technology help
+develop reliable and intelligent devices that improve the industrial base, provide
+medical services, or enhance the learning environment?
+
+                        Grade 12 Semester 1 2026/2027
+\fDesign Challenge:
+
+Recently, AI has significantly improved device performance across a wide range of
+applications. An AI-based device can analyze and interpret variable inputs and
+adjust its performance accordingly. Therefore, students must design a device/system
+that analyzes the current situation in one of the challenges under consideration.
+The proposed device must perform the necessary sensing, measurements, and
+communication with information/data sources to support AI-driven solutions. These
+solutions should help expand the industrial base, deliver reliable medical services,
+or enhance the learning environment. The schematic diagram of the capstone idea
+is shown in Scheme 1.
+
+
+
+
+                Scheme 1: Schematic diagram of the capstone idea.
+
+
+
+
+                                          2
+Grade 12 Semester 1 2026/2027
+\fPathways
+The following are examples of the challenges under consideration. However, the
+students are not restricted to these examples.
+
+
+   A. Industrial Base
+   • Fully automated production lines.
+   • Product quality inspection and control.
+   • Any relevant application to increase the industrial base, with the approval of
+       the school board.
+
+
+   B. Educational Environment
+   • A device that incorporates voice and text to facilitate foreign-language
+       learning.
+   • A device for automatically grading homework and providing feedback to
+       improve students' performance and support activities related to the
+       educational process.
+   • A device that assists with programming in general and AI-based projects in
+       particular.
+   • Any relevant device/application that facilitates the educational environment,
+       with the approval of the school board.
+
+
+   C. Medical Services
+   • A device for people with disabilities that continuously monitors the user's
+       condition and, in critical situations, notifies the next of kin, responsible
+       medical personnel, and a nearby hospital. The device could also contact
+       emergency services when immediate intervention is required.
+   • AI-based smart glasses that assist people who are blind with daily activities.
+                                          3
+\f   • An AI-based wheelchair for people with disabilities that can detect and avoid
+      obstacles.
+   • Any relevant device/application to address medical problems, with the
+      approval of the school board.
+
+Design Requirements:
+
+The design must meet the following requirements:
+
+   • Students must identify at least four measurable design requirements,
+      including response time and system accuracy, for their prototype. Students
+      must also select two additional measurable design requirements based on the
+      application.
+   • The prototype must use Information and Communication Technology (ICT),
+      IoT, and AI platforms.
+   • The prototype must contain hardware components.
+   • Students must provide datasets and a rubric for machine/deep learning
+      algorithms during the exhibition.
+   • Students must provide evidence of the accuracy of the AI model, which must
+      be at least 80%.
+   • Students must conduct and document sensor calibration.
+   • Functional prototypes must be testable, operational, reliable, and portable on
+      exhibition day. The team should also bring a hard copy of each team
+      member's logbook.
+
+Constraints:
+
+   • The whole system (software and hardware) must be testable.
+
+
+                                          4
+\f  • Arduino boards are not allowed. Students are encouraged to use more
+    advanced controllers.
+  • Students must be able to show the change in system outputs or states as a
+     function of changing inputs.
+  • Laboratory equipment or materials must not be removed from the laboratories
+    at any time. Tests that require this equipment must be conducted in the labs.
+  • Projects involving chronic diseases are not considered.
+  • For the medical pathway, no hazards are allowed.
+
+
+
+
+                                        5
