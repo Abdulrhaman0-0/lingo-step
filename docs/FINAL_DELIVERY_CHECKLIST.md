@@ -50,3 +50,11 @@ Last code-only acceptance update: **2026-11-08**.
 - 2026-11-08: PR #2 merged to main as squash commit `355e5e285c429dc0a636bf9caa7f220eccdb6b5d`; source available via `git pull origin main`.
 - Headless Python tests passed on GitHub CI on Python 3.11 and 3.13 before merge; post-merge CI should also be checked.
 - Image model data and its Python-compatible TFLite conversion, Pi hardware signoff, and live guardian cloud hosting are the remaining external dependencies. The label 'code-integrated' is not equivalent to 'end-to-end complete'.
+
+## 2026-11-08 A–E TFLite demo handoff
+- User provided converted_tflite.zip (binary model_unquant.tflite 2,091,532 bytes and labels.txt classes 0 A through 4 E).
+- Updated Python image adapter to accept the actual 5-class demo with config.json, while retaining support for future A–Z class model.
+- Revised lesson service and UI so F–Z are not graded or stored as incorrect based on the 5-class model.
+- Added config.json, labels.txt, unit tests and docs/AE_MODEL_DESKTOP_TEST.md; enabled TensorFlow Lite fallback for Windows testing where available.
+- The GitHub connection cannot directly upload the 2 MB binary from the chat attachment, so **models/image/model.tflite is still NOT in GitHub**. Upload the exact prepared file through GitHub web once, then pull on laptop/Raspberry.
+- The model has no NO_CARD class. RGB normalization and empirical accuracy must be verified with actual test cards.
