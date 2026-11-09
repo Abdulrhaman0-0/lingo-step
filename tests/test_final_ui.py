@@ -56,6 +56,12 @@ class FinalUIRenderTests(unittest.TestCase):
             _,buttons=ScreenPainter().render(screen,profiles=[{"id":"test123","name":"سلمى"}])
             self.assertTrue(required.issubset({x for x,_ in buttons}),screen)
 
+    def test_revision_does_not_render_the_target_letter(self):
+        first, targets = ScreenPainter().render("revision", letter="A")
+        second, _ = ScreenPainter().render("revision", letter="Z")
+        self.assertEqual(first.tobytes(), second.tobytes())
+        self.assertIn("listen", {action for action, _ in targets})
+
     def test_logout_closes_camera_and_preserves_saved_child_progress(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = StudentProgressStore(Path(tmp)/"progress.db")

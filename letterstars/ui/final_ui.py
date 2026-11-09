@@ -21,6 +21,30 @@ TEAL = "#0E6B9D"
 PINK = "#FB7C85"
 PALE = "#FFE39A"
 
+# Icon strokes on a 24×24 grid, independent of installed fonts.
+ICONS = {
+    "back": (((9, 5), (2, 12), (9, 19)), ((2, 12), (22, 12))),
+    "prev": (((15, 4), (7, 12), (15, 20)),),
+    "next": (((9, 4), (17, 12), (9, 20)),),
+    "listen": (((2, 9), (6, 9), (12, 4), (12, 20), (6, 15), (2, 15), (2, 9)),
+               ((16, 8), (18, 12), (16, 16)), ((20, 5), (23, 12), (20, 19))),
+    "speak": (((9, 5), (9, 12), (12, 15), (15, 12), (15, 5), (12, 2), (9, 5)),
+              ((5, 10), (5, 14), (8, 18), (16, 18), (19, 14), (19, 10)),
+              ((12, 18), (12, 22)), ((8, 22), (16, 22))),
+    "camera": (((2, 6), (7, 6), (9, 3), (15, 3), (17, 6), (22, 6), (22, 21),
+                (2, 21), (2, 6)), ((8, 12), (12, 9), (16, 12), (16, 15), (12, 18), (8, 15), (8, 12))),
+    "stop": (((5, 5), (19, 5), (19, 19), (5, 19), (5, 5)),),
+    "book": (((12, 5), (2, 3), (2, 19), (12, 21), (22, 19), (22, 3), (12, 5), (12, 21)),),
+    "logout": (((11, 3), (3, 3), (3, 21), (11, 21)), ((8, 12), (22, 12)),
+               ((17, 7), (22, 12), (17, 17))),
+    "create": (((3, 12), (21, 12)), ((12, 3), (12, 21))),
+    "all_profiles": (((4, 5), (20, 5)), ((4, 12), (20, 12)), ((4, 19), (20, 19))),
+    "copy": (((8, 8), (21, 8), (21, 21), (8, 21), (8, 8)), ((4, 16), (4, 3), (17, 3))),
+    "close": (((5, 5), (19, 19)), ((5, 19), (19, 5))),
+    "pair": (((9, 12), (12, 9), (16, 5), (20, 5), (20, 9), (16, 13)),
+             ((15, 12), (12, 15), (8, 19), (4, 19), (4, 15), (8, 11))),
+}
+
 
 def font(size, bold=False, arabic=True):
     # DejaVu covers Arabic, Latin and UI symbols in the same mixed text run.
@@ -47,7 +71,7 @@ class ScreenPainter:
         self.draw_ctx.rounded_rectangle(tuple(map(int, b)), radius=int(radius),
                                        fill=fill, outline=outline, width=width)
 
-    def centered(self, x, y, value, size=28, color=INK, bold=False, arabic=True):
+    def centered(self, x, y, value, size=28, color=INK, bold=False, arabic=True, icon=None):
         text = str(value)
         options = {}
         if HAS_RAQM:
@@ -56,9 +80,21 @@ class ScreenPainter:
             import arabic_reshaper
             from bidi.algorithm import get_display
             text = get_display(arabic_reshaper.reshape(text))
+        face = font(size, bold, arabic)
+        if icon:
+            width = self.draw_ctx.textlength(text, font=face, **options)
+            icon_size = size + 2
+            self.icon(icon, x + (width + 9)/2, y, icon_size, color)
+            x -= (icon_size + 9)/2
         self.draw_ctx.text((int(x), int(y)), text,
-                           font=font(size, bold, arabic), fill=color,
+                           font=face, fill=color,
                            anchor="mm", **options)
+
+    def icon(self, name, x, y, size, color):
+        scale = size/24
+        for stroke in ICONS[name]:
+            points = [(x + (px-12)*scale, y + (py-12)*scale) for px, py in stroke]
+            self.draw_ctx.line(points, fill=color, width=max(2, round(size/9)), joint="curve")
 
     def star(self, x, y, radius, color):
         pts = []
@@ -91,12 +127,12 @@ class ScreenPainter:
         self.star(x-390*k,y-12*k,15*k,"#FFCF57")
         self.star(x+390*k,y+20*k,12*k,"#F39CC9")
 
-    def button(self, action, text, b, color, shadow, fg=INK, size=26):
+    def button(self, action, text, b, color, shadow, fg=INK, size=26, icon=None):
         x1,y1,x2,y2=b
         self.rect((x1,y1+9,x2,y2+9),shadow,37)
         self.rect(b,color,37)
         self.rect((x1+20,y1+12,x2-20,y1+20),"#FFFFFF",7)
-        self.centered((x1+x2)/2,(y1+y2)/2,text,size,fg,True)
+        self.centered((x1+x2)/2,(y1+y2)/2,text,size,fg,True,icon=icon or action)
         if action:self.targets.append((action,b))
 
     def header(self, section=""):
@@ -123,7 +159,7 @@ class ScreenPainter:
         elif symbol == "✓":
             self.draw_ctx.line([(mid-18,y1+95),(mid-4,y1+109),(mid+21,y1+78)],fill=INK,width=6)
         else:
-            self.centered(mid,y1+95,symbol,49,INK,True,False)
+            self.icon(symbol,mid,y1+95,52,INK)
         self.centered(mid,y1+200,headline,31,"#3F2D23",True)
         self.centered(mid,y1+248,sub,17,"#53483C")
         self.draw_ctx.ellipse((mid-31,y2-79,mid+31,y2-17),fill="#FFFFFF")
@@ -170,7 +206,7 @@ class ScreenPainter:
             self.card("revision",(455,465,825,818),CORAL,"#A34327",
                       "المراجعة","تثبيت الحروف","✓")
             self.card("learn",(842,465,1212,818),BLUE,"#1A6086",
-                      "التعليم الأساسي","ابدأ المغامرة","A")
+                      "التعليم الأساسي","ابدأ المغامرة","book")
         elif page=="learn":
             self.header("المستوى ١")
             self.panel((402,190,880,614),"#FFFFFF","#E1DDD5",42)
@@ -200,13 +236,14 @@ class ScreenPainter:
                                   fill="#95C8E6",width=5)
             self.button("camera","إيقاف الكاميرا" if camera_live else "تشغيل الكاميرا",
                         (430,536,850,602),CORAL if camera_live else BLUE,
-                        "#B4472B" if camera_live else "#16648E","#FFFFFF",27)
+                        "#B4472B" if camera_live else "#16648E","#FFFFFF",27,
+                        icon="stop" if camera_live else "camera")
             self.centered(640,632,"يوقف عرض البطاقة" if camera_live else
                           "يعرض البطاقة للتعرف على الحرف",20,"#586B7F")
             self.panel((247,656,1034,736),"#FFFFFF","#F7D3CB",42)
-            self.centered(740,695,"الحرف "+letter+" - ارفع البطاقة المناسبة",23,INK,True)
+            self.centered(660,695,"استمع ثم ارفع البطاقة المناسبة",23,INK,True)
             self.draw_ctx.ellipse((285,668,345,728),fill=CORAL)
-            self.centered(315,697,"♪",28,"#FFFFFF",True,False)
+            self.icon("listen",315,697,31,"#FFFFFF")
             self.targets.append(("listen",(247,656,1034,736)))
             self.button("prev","السابق",(247,763,615,839),PALE,"#AE8D1A",INK,25)
             self.button("next","التالي",(667,763,1035,839),GOLD,"#AF8400",INK,27)

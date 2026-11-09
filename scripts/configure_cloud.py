@@ -1,5 +1,6 @@
-"""Save a private hosting connection file on Pi and queue prior progress once."""
+"""Configure the Pi's hosted connection and queue prior progress once."""
 import argparse
+from getpass import getpass
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,10 @@ def save_connection(source, target, progress_path):
     settings = json.loads(Path(source).read_text(encoding="utf-8"))
     if not isinstance(settings, dict):
         raise ValueError("Expected a JSON connection file")
+    return save_settings(settings, target, progress_path)
+
+
+def save_settings(settings, target, progress_path):
     url, token = settings.get("url"), settings.get("token")
     parsed = urlsplit(url) if isinstance(url, str) else None
     if (not parsed or parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or
@@ -43,10 +48,21 @@ def save_connection(source, target, progress_path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("connection_file", type=Path, help="Private pi-cloud-settings.json downloaded from the host")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("connection_file", nargs="?", type=Path, help="Private pi-cloud-settings.json")
+    source.add_argument("--url", help="Hosted HTTPS URL. Enter the device token at the hidden prompt.")
     args = parser.parse_args()
     from letterstars.config import APP_DATA
-    url = save_connection(args.connection_file, ROOT/"data/cloud-settings.json", APP_DATA/"progress.db")
+    target = ROOT/"data/cloud-settings.json"
+    progress = APP_DATA/"progress.db"
+    try:
+        if args.url:
+            token = getpass("Device token (hidden): ").strip()
+            url = save_settings({"url": args.url, "token": token}, target, progress)
+        else:
+            url = save_connection(args.connection_file, target, progress)
+    except ValueError as exc:
+        parser.error(str(exc))
     print("Cloud connection saved:", url)
     print("Existing progress queued for upload if this is a new connection. No student data was deleted.")
     print("Next: bash scripts/run_pi.sh (not run_demo.py)")
