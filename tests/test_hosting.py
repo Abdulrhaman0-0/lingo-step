@@ -10,11 +10,27 @@ from cloud.hosting import prepare_settings, create_hosted_app
 from letterstars.infrastructure.cloud_settings import load_cloud_settings
 from letterstars.infrastructure.student_progress import StudentProgressStore
 from letterstars.domain.models import Attempt
-from scripts.configure_cloud import save_connection
+from scripts.configure_cloud import main as configure_cloud, save_connection
 from scripts.build_web_bundle import build_bundle
 
 
 class HostingTests(unittest.TestCase):
+    def test_pi_can_configure_connection_without_transferring_a_file(self):
+        url = "https://example.pythonanywhere.com"
+        token = "x" * 40
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch("scripts.configure_cloud.ROOT", root), \
+                 patch("letterstars.config.APP_DATA", root), \
+                 patch("sys.argv", ["configure_cloud.py", "--url", url]), \
+                 patch("scripts.configure_cloud.getpass", return_value=token) as prompt, \
+                 patch("builtins.print") as output:
+                configure_cloud()
+            prompt.assert_called_once()
+            self.assertNotIn(token, str(output.call_args_list))
+            settings = json.loads((root/"data/cloud-settings.json").read_text())
+            self.assertEqual(settings, {"url": url, "token": token})
+
     def test_host_keys_and_database_survive_setup_again(self):
         with tempfile.TemporaryDirectory() as tmp:
             settings = prepare_settings(tmp, "https://example.pythonanywhere.com")

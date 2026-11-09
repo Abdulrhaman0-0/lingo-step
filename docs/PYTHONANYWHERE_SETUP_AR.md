@@ -40,15 +40,21 @@ from cloud.pythonanywhere_wsgi import application
 
 ## توصيل الراسبيري — مرة واحدة
 
-نزّل **بشكل خاص من حساب PythonAnywhere** ملف `cloud/data/pi-cloud-settings.json` وانقله إلى Downloads على الراسبيري. لا تضعه على GitHub أو داخل مجلد static عام، ولا ترسل التوكن في المحادثة.
-
-بعد تحديث الريبو على الراسبيري، اقفل التطبيق ثم نفّذ:
+اقفل التطبيق على الراسبيري وحدّث الكود من GitHub. من حسابك على PythonAnywhere، افتح **Files** ثم `lingostep-web/cloud/data/pi-cloud-settings.json` في المتصفح على الراسبيري، وانسخ قيمة `token` فقط من غير علامات التنصيص.
 
 ```bash
 cd ~/lingo-step
-.venv/bin/python scripts/configure_cloud.py ~/Downloads/pi-cloud-settings.json
+git pull --ff-only
+.venv/bin/python scripts/configure_cloud.py --url https://USERNAME.pythonanywhere.com
+```
+
+الصق التوكن عند ظهور `Device token (hidden)` واضغط Enter. الكتابة مخفية. احتفظ بالتوكن في حسابك وإعدادات جهازك فقط. بعدها شغّل التطبيق:
+
+```bash
 LINGOSTEP_MIC_DEVICE='USB PnP Sound Device' bash scripts/run_pi.sh
 ```
+
+لو ملف الربط موجود أصلًا على الراسبيري، يظل أمر `.venv/bin/python scripts/configure_cloud.py ~/Downloads/pi-cloud-settings.json` متاحًا.
 
 الإعداد يحفظ الاتصال في `data/cloud-settings.json` المستثنى من Git. عند تغيير الوجهة يعيد وضع المحاولات القديمة في طابور الإرسال؛ UUID يمنع مضاعفة النتائج. تسجيل الدخول للولي على الموقع المستضاف جديد ومنفصل عن حساب العرض المحلي، لكن تقدم الطفل الموجود على الراسبيري يظل محفوظًا ويُرفع عند المزامنة.
 

@@ -10,14 +10,14 @@ devices that need time to start streaming. This does not fix a muted or
 misrouted speaker.
 
 - `correct.wav`: ممتاز
-- `retry.wav`: أحيه! حاول مرة أخرى
-- `retry_again.wav`: يا نهار أسود! حاول مرة أخرى
+- `retry.wav`: حاول مرة أخرى
+- `retry_again.wav`: خطأ، حاول مرة أخرى
 
 Source transcripts (diacritics guide the synthesis; the UI uses normal spelling):
 
 - correct: `مُمْتاز!`
-- retry: `أَحِّيه! حاوِل مَرَّة أُخرى.`
-- retry_again: `يا نَهار إِسْوِد! حاوِل مَرَّة أُخرى.`
+- retry: `حاوِل مَرَّة أُخرى.`
+- retry_again: `خَطَأ، حاوِل مَرَّة أُخرى.`
 
 Generation is a developer-only task using `edge-tts` and `miniaudio`; neither
 package nor online access is needed for normal Raspberry playback. Update all

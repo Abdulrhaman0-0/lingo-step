@@ -11,8 +11,8 @@ from letterstars.ui.final_ui import LingoStepApp
 class AnswerFeedbackTests(unittest.TestCase):
     def test_wrong_answers_escalate_until_correct_then_restart(self):
         feedback = AnswerFeedback()
-        self.assertEqual(feedback.answer("try_again"), ("retry", "أحيه! حاول مرة أخرى"))
-        self.assertEqual(feedback.answer("try_again"), ("retry_again", "يا نهار أسود! حاول مرة أخرى"))
+        self.assertEqual(feedback.answer("try_again"), ("retry", "حاول مرة أخرى"))
+        self.assertEqual(feedback.answer("try_again"), ("retry_again", "خطأ، حاول مرة أخرى"))
         self.assertEqual(feedback.answer("try_again")[0], "retry_again")
         self.assertEqual(feedback.answer("correct"), ("correct", "ممتاز"))
         self.assertEqual(feedback.answer("try_again")[0], "retry")
