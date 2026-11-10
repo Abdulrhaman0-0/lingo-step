@@ -99,3 +99,18 @@ See **[Final delivery checklist](docs/FINAL_DELIVERY_CHECKLIST.md)** and **[Depl
 The supplied Capstone source materials and the extracted Smart Alphabet Learning starter files are organized under [docs/capstone](docs/capstone/README.md). This includes the searchable official requirements text, supporting research notes, the three-day execution playbook, starter Python files, and testing CSV templates.
 
 For device setup, use the [safe Raspberry Pi setup template](docs/setup/raspberry_pi_setup.example.txt). **Actual Wi-Fi passwords, Pi login passwords, SSH keys, and cloud/API tokens are intentionally not stored in this public repository.** Keep local values in `raspberry_pi_setup.local.txt` (ignored by Git) or enter them directly in Raspberry Pi Imager.
+
+## Autostart on Raspberry Pi 5
+
+To launch LingoStep automatically after the Raspberry Pi desktop signs in:
+
+```bash
+cd ~/lingo-step
+git pull --ff-only origin main
+bash scripts/install_autostart.sh --enable
+bash scripts/install_autostart.sh --status
+```
+
+Enable **Desktop Autologin** with `sudo raspi-config` if the exhibition device must start without typing a password. Reboot and test with `sudo reboot`. Log: `data/logs/autostart.log`. Disable with `bash scripts/install_autostart.sh --disable`. Full Arabic guide: [Autostart setup](docs/AUTOSTART_RASPBERRY_AR.md).
+
+**Image AI handoff:** `main.py` currently loads `models/image/model.tflite` plus `models/image/config.json`, configured for A–Z + `others` (27 classes). Do **not** replace those files with an unverified ZIP just based on its filename. Check the exported model architecture, labels, input and normalization first. The separately supplied ZIP `4_6019569374568915343.zip` is not yet in this repository or available as a binary attachment in the current request.
