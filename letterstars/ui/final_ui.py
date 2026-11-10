@@ -297,17 +297,55 @@ class LingoStepApp:
         self.canvas.pack(fill="both",expand=True)
         self.canvas.bind("<Configure>",lambda _:self.render())
         self.canvas.bind("<Button-1>",self.on_click)
-        self.root.bind("<Escape>",lambda _:self.root.attributes("-fullscreen",False))
-        self.root.bind("<F11>",lambda _:self.root.attributes("-fullscreen",
-                        not self.root.attributes("-fullscreen")))
+        self._kiosk_enabled=False
+        self._kiosk_fallback=False
+        self.root.bind("<Escape>",lambda _:self.set_kiosk(False))
+        self.root.bind("<F11>",lambda _:self.set_kiosk(not self._kiosk_enabled))
         self.root.protocol("WM_DELETE_WINDOW",self.close)
         self.page="welcome";self.name="";self.status="";self.video=None
         self.camera_live=False;self.mic_busy=False;self.name_entry=None
         self._entry_window=None
         self._photo=None;self._targets=[];self._thread_messages=queue.Queue()
-        self.root.attributes("-fullscreen",True)
+        # The Pi desktop window manager may ignore -fullscreen before the window
+        # has been mapped. Apply it after the UI exists, then check the result.
         self.render();self.root.after(150,self.poll_workers)
         self.root.after(30_000,self.periodic_sync)
+        self.root.after(250,lambda:self.set_kiosk(True))
+
+    def set_kiosk(self,enabled):
+        """Switch between exhibition full screen and a normal maintenance window."""
+        self._kiosk_enabled=bool(enabled)
+        if not enabled:
+            self.root.attributes("-fullscreen",False)
+            if self._kiosk_fallback:
+                self.root.overrideredirect(False)
+                self._kiosk_fallback=False
+            self.root.geometry("1100x770")
+            return
+        # First try the desktop window manager's native fullscreen request.
+        if self._kiosk_fallback:
+            self.root.overrideredirect(False)
+            self._kiosk_fallback=False
+        self.root.attributes("-fullscreen",True)
+        self.root.lift()
+        self.root.after(850,self._ensure_kiosk_fills_screen)
+
+    def _ensure_kiosk_fills_screen(self):
+        """Some Pi Wayland/XWayland sessions ignore an early fullscreen request."""
+        if not self._kiosk_enabled or not self.root.winfo_exists():
+            return
+        screen_w=self.root.winfo_screenwidth()
+        screen_h=self.root.winfo_screenheight()
+        window_w=self.root.winfo_width()
+        window_h=self.root.winfo_height()
+        if window_w >= screen_w*.94 and window_h >= screen_h*.94:
+            return
+        # Last resort: a borderless window sized to the actual display.
+        self.root.attributes("-fullscreen",False)
+        self.root.overrideredirect(True)
+        self._kiosk_fallback=True
+        self.root.geometry(f"{screen_w}x{screen_h}+0+0")
+        self.root.lift()
 
     def render(self):
         width=max(2,self.canvas.winfo_width())
