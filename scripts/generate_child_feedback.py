@@ -16,8 +16,8 @@ OUT = ROOT / "assets" / "audio"
 # Partial diacritics clarify articulation for Egyptian Arabic voice synthesis.
 LINES = {
     "correct": "مُمْتاز!",
-    "retry": "حاوِل مَرَّة تانية.",
-    "retry_again": "مَعْلِش، حاوِل مَرَّة تانية.",
+    "retry": "حاوِل مَرَّة أُخرى.",
+    "retry_again": "خَطَأ، حاوِل مَرَّة أُخرى.",
 }
 
 def run(cmd):
