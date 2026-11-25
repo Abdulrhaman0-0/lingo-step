@@ -43,7 +43,7 @@ class BenchmarkAccountingTests(unittest.TestCase):
     def test_labels_and_other_ground_truth(self):
         self.assertEqual(benchmark.parse_letters("A,B,C"), ["A", "B", "C"])
         self.assertEqual(benchmark.parse_letters("abc"), ["A", "B", "C"])
-        for bad in ("", "AAB", "A1", "OTHER"):
+        for bad in ("", "AAB", "A1", "A-Z"):
             with self.assertRaises(ValueError):
                 benchmark.parse_letters(bad)
         self.assertTrue(benchmark.is_correct("OTHER", "UNKNOWN"))
