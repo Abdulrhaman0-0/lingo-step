@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 from array import array
 import math
+import time
 from ..domain.models import Prediction
 
 LETTER_WORDS = {
@@ -102,6 +103,9 @@ class VoskSpeechClassifier:
         self.last_sample_rate = self.rate
         self.last_device_name = ""
         self.last_issue = ""
+        self.last_capture_ms = 0.0
+        self.last_decode_ms = 0.0
+        self.last_total_ms = 0.0
         try:
             if not self.model_path.is_dir():
                 raise FileNotFoundError("Vosk language model not installed")
@@ -117,21 +121,28 @@ class VoskSpeechClassifier:
             raise RuntimeError("Vosk unavailable: " + self.error)
         import sounddevice as sd
         from vosk import KaldiRecognizer
+        started = time.perf_counter()
+        self.last_capture_ms = 0.0
+        self.last_decode_ms = 0.0
+        self.last_total_ms = 0.0
         rate = self.rate
         self.last_transcript = ""
         self.last_issue = ""
         # Tk UI calls this in a worker: capture must never freeze mainloop.
         if audio is None:
+            capture_started = time.perf_counter()
             rate = microphone_rate(self.device, self.rate)
             self.last_device_name = sd.query_devices(self.device, "input")["name"]
             data = sd.rec(int(self.duration*rate), samplerate=rate,
                           channels=1, dtype="int16", device=self.device)
             sd.wait()
             pcm = data.tobytes()
+            self.last_capture_ms = (time.perf_counter() - capture_started) * 1000
         elif isinstance(audio, bytes):
             pcm = audio
         else:
             raise ValueError("Expected PCM16 bytes or microphone recording")
+        decode_started = time.perf_counter()
         samples = array("h")
         samples.frombytes(pcm)
         self.last_sample_rate = rate
@@ -152,4 +163,6 @@ class VoskSpeechClassifier:
         prediction, self.last_transcript = parse_vosk_result(result)
         if prediction is None:
             self.last_issue = "quiet" if self.last_audio_rms < 30 else "unrecognized"
+        self.last_decode_ms = (time.perf_counter() - decode_started) * 1000
+        self.last_total_ms = (time.perf_counter() - started) * 1000
         return prediction
