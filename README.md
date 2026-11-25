@@ -114,3 +114,14 @@ bash scripts/install_autostart.sh --status
 Enable **Desktop Autologin** with `sudo raspi-config` if the exhibition device must start without typing a password. Reboot and test with `sudo reboot`. Log: `data/logs/autostart.log`. Disable with `bash scripts/install_autostart.sh --disable`. Full Arabic guide: [Autostart setup](docs/AUTOSTART_RASPBERRY_AR.md).
 
 **Image AI handoff:** `main.py` currently loads `models/image/model.tflite` plus `models/image/config.json`, configured for A–Z + `others` (27 classes). Do **not** replace those files with an unverified ZIP just based on its filename. Check the exported model architecture, labels, input and normalization first. The separately supplied ZIP `4_6019569374568915343.zip` is not yet in this repository or available as a binary attachment in the current request.
+
+## Evidence: AI accuracy and response-time benchmarks
+
+Run both native models against independently labelled trials and generate CSV, Markdown summary, JSON and confusion matrices. Image camera test includes the app's five stable frames at confidence >=0.80; Vosk test reports its 3-second recording separately from processing latency. **No accuracy numbers are assumed: test results must be measured on the real hardware/dataset.**
+
+Arabic instructions: [AI benchmarks (Accuracy / Response Time)](docs/AI_BENCHMARK_AR.md).
+
+```bash
+.venv/bin/python scripts/benchmark_ai.py camera --letters ABCDE --repeats 3 --others 3
+.venv/bin/python scripts/benchmark_ai.py mic --letters ABCDE --repeats 3
+```
